@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Gastos Compartidos</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f6f8;
+      color: #222;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #4f46e5;
+      color: white;
+      padding: 18px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 { font-size: 22px; }
+
+    .header-actions { display: flex; gap: 8px; }
+
+    .container {
+      width: 90%;
+      max-width: 1100px;
+      margin: 30px auto;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      margin-bottom: 25px;
+    }
+
+    .auth-wrapper {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+    }
+
+    h2 { margin-bottom: 18px; color: #333; }
+    h3 { margin-bottom: 10px; }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 11px;
+      margin-bottom: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 11px 18px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .btn-primary   { background: #4f46e5; color: white; }
+    .btn-secondary { background: #10b981; color: white; }
+    .btn-danger    { background: #ef4444; color: white; }
+    .btn-light     { background: #e5e7eb; color: #222; }
+    .btn-warning   { background: #f59e0b; color: white; }
+
+    .error   { color: #dc2626; font-size: 14px; margin-bottom: 12px; }
+    .success { color: #059669; font-size: 14px; margin-bottom: 12px; }
+
+    .hidden { display: none; }
+
+    .main-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+
+    .group-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      padding: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .group-card:hover {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .group-card h3 { margin-bottom: 8px; color: #4f46e5; }
+
+    .member-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 10;
+    }
+
+    .modal-content {
+      background: white;
+      width: 100%;
+      max-width: 850px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 16px;
+      padding: 25px;
+      position: relative;
+    }
+
+    .modal.hidden { display: none; }
+
+    .close-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: transparent;
+      font-size: 22px;
+      color: #555;
+    }
+
+    .detail-box {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 12px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 15px;
+    }
+
+    ul { margin-left: 20px; margin-top: 8px; }
+
+    .empty-state {
+      text-align: center;
+      color: #666;
+      padding: 25px;
+      background: white;
+      border-radius: 12px;
+    }
+
+    .expense-item, .balance-item, .debt-item {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .positive { color: #059669; font-weight: bold; }
+    .negative { color: #dc2626; font-weight: bold; }
+    .neutral  { color: #555;    font-weight: bold; }
+
+    .small-text { font-size: 13px; color: #666; }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .filter-row label { margin-bottom: 0; font-size: 13px; white-space: nowrap; }
+
+    .filter-row input[type="date"],
+    .filter-row select {
+      width: auto;
+      flex: 1;
+      min-width: 120px;
+      margin-bottom: 0;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .filter-row input[type="text"] {
+      flex: 2;
+      min-width: 160px;
+      margin-bottom: 0;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    .filter-row button { padding: 8px 12px; font-size: 13px; }
+
+    .expense-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .expense-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .expense-item-actions button { padding: 5px 10px; font-size: 12px; }
+
+    .group-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+
+    .modal-content-sm { max-width: 480px; }
+
+    #editEmail { background: #f3f4f6; cursor: not-allowed; }
+
+    .profile-divider { margin: 15px 0; border-color: #e5e7eb; }
+
+    /* Categorías */
+    .category-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      margin: 2px 0 4px;
+    }
+
+    .cat-Comida          { background: #fef3c7; color: #92400e; }
+    .cat-Transporte      { background: #dbeafe; color: #1e40af; }
+    .cat-Servicios       { background: #f3e8ff; color: #6b21a8; }
+    .cat-Entretenimiento { background: #fce7f3; color: #9d174d; }
+    .cat-Alquiler        { background: #dcfce7; color: #166534; }
+    .cat-Limpieza        { background: #e0f2fe; color: #0369a1; }
+    .cat-Otro            { background: #f1f5f9; color: #475569; }
+
+    /* Miembros con botón eliminar */
+    .member-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f3f4f6;
+      gap: 8px;
+    }
+
+    .member-item:last-child { border-bottom: none; }
+    .member-item-info { flex: 1; font-size: 14px; }
+    .member-item button { padding: 4px 8px; font-size: 12px; flex-shrink: 0; }
+
+    .debt-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .debt-item-header button { padding: 5px 10px; font-size: 12px; flex-shrink: 0; }
+
+    /* Recuperar contraseña (SCRUM-14) */
+    .forgot-link {
+      text-align: right;
+      margin-top: -8px;
+      margin-bottom: 14px;
+    }
+    .forgot-link a {
+      font-size: 13px;
+      color: #4f46e5;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Estadísticas (SCRUM-35) */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+      gap: 10px;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-right { text-align: right; min-width: 90px; }
+    .stat-bar-wrap {
+      flex: 1;
+      background: #e5e7eb;
+      border-radius: 4px;
+      height: 6px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    .stat-bar {
+      background: #4f46e5;
+      height: 100%;
+      border-radius: 4px;
+    }
+    .stat-section-title {
+      font-weight: bold;
+      font-size: 13px;
+      color: #666;
+      margin: 12px 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Resumen global (NUEVA-C) */
+    .global-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+    .summary-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .summary-card p { font-size: 13px; color: #666; margin-bottom: 6px; }
+    .summary-card span { font-size: 22px; font-weight: bold; }
+
+    /* Historial de pagos (NUEVA-A) */
+    .payment-item {
+      background: white;
+      border: 1px solid #d1fae5;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .payment-note { font-size: 12px; color: #666; margin-top: 4px; }
+
+    @media (max-width: 650px) {
+      header { flex-direction: column; gap: 10px; text-align: center; }
+      .member-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Gastos Compartidos</h1>
+    <div class="header-actions">
+      <button id="editProfileBtn" class="btn-light hidden">Mi perfil</button>
+      <button id="logoutBtn"      class="btn-light hidden">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Auth -->
+    <section id="authSection" class="auth-wrapper">
+      <div class="card">
+        <h2>Registro</h2>
+        <p id="registerMessage"></p>
+        <form id="registerForm">
+          <label for="name">Nombre</label>
+          <input type="text" id="name" placeholder="Ej: Salomé" />
+          <label for="lastname">Apellido</label>
+          <input type="text" id="lastname" placeholder="Ej: Torres" />
+          <label for="phone">Número de teléfono</label>
+          <input type="tel" id="phone" placeholder="Ej: 11 1234-5678" />
+          <label for="email">Mail</label>
+          <input type="email" id="email" placeholder="Ej: usuario@mail.com" />
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="Mínimo 6 caracteres" />
+          <button type="submit" class="btn-primary">Crear cuenta</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Iniciar sesión</h2>
+        <p id="loginMessage"></p>
+        <form id="loginForm">
+          <label for="loginEmail">Mail</label>
+          <input type="email" id="loginEmail" placeholder="Ej: usuario@mail.com" />
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" />
+          <button type="submit" class="btn-secondary">Ingresar</button>
+          <p class="forgot-link"><a id="forgotPasswordLink">¿Olvidaste tu contraseña?</a></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Principal -->
+    <section id="mainSection" class="hidden">
+      <div class="card">
+        <h2 id="welcomeTitle">Página principal</h2>
+        <p>Desde acá podés crear grupos, unirte por código y ver los grupos disponibles.</p>
+      </div>
+      <!-- Resumen global (NUEVA-C) -->
+      <div id="globalSummary" class="global-summary"></div>
+
+      <div class="main-actions">
+        <button id="openCreateGroupBtn" class="btn-primary">Nuevo Grupo</button>
+        <button id="openJoinGroupBtn"   class="btn-secondary">Unirme a un grupo</button>
+      </div>
+      <h2>Mis grupos</h2>
+      <div id="groupsContainer" class="groups-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- Modal: Crear grupo -->
+  <div id="createGroupModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" data-close="createGroupModal">×</button>
+      <h2>Crear nuevo grupo</h2>
+      <p id="createGroupMessage"></p>
+      <form id="createGroupForm">
+        <label for="groupName">Nombre del grupo</label>
+        <input type="text" id="groupName" placeholder="Ej: Roommates Depto Devoto" />
+        <label for="groupCode">Código del grupo</label>
+        <input type="text" id="groupCode" placeholder="Ej: DEVOTO2026" />
+        <h3>Integrantes</h3>
+        <div id="membersContainer"></div>
+        <button type="button" id="addMemberBtn" class="btn-light">Agregar integrante</button>
+        <br><br>
+        <button type="submit" class="btn-primary">Crear grupo</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Unirse a grupo -->
+  <div id="joinGroupModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" data-close="joinGroupModal">×</button>
+      <h2>Unirme a un grupo</h2>
+      <p id="joinGroupMessage"></p>
+      <form id="joinGroupForm">
+        <label for="joinCode">Código de grupo</label>
+        <input type="text" id="joinCode" placeholder="Ingresá el código del grupo" />
+        <button type="submit" class="btn-secondary">Unirme</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Detalle del grupo -->
+  <div id="groupDetailModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" data-close="groupDetailModal">×</button>
+      <h2 id="detailGroupName"></h2>
+      <p id="detailGroupCode"></p>
+
+      <div id="groupActions" class="group-actions"></div>
+
+      <div class="detail-grid">
+        <div class="detail-box">
+          <h3>Miembros</h3>
+          <div id="detailMembers"></div>
+        </div>
+        <div class="detail-box">
+          <h3>Mi saldo en este grupo</h3>
+          <p id="myBalanceText"></p>
+          <p class="small-text">Se actualiza automáticamente con cada gasto.</p>
+        </div>
+      </div>
+
+      <div class="detail-box">
+        <h3>Agregar gasto</h3>
+        <p id="expenseMessage"></p>
+        <form id="expenseForm">
+          <label for="expenseDescription">Descripción del gasto</label>
+          <input type="text" id="expenseDescription" placeholder="Ej: Supermercado, alquiler, limpieza" />
+
+          <label for="expenseAmount">Monto</label>
+          <input type="number" id="expenseAmount" min="1" step="0.01" placeholder="Ej: 15000" />
+
+          <label for="expenseCategory">Categoría</label>
+          <select id="expenseCategory">
+            <option value="">Sin categoría</option>
+            <option value="Comida">Comida</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Servicios">Servicios</option>
+            <option value="Entretenimiento">Entretenimiento</option>
+            <option value="Alquiler">Alquiler</option>
+            <option value="Limpieza">Limpieza</option>
+            <option value="Otro">Otro</option>
+          </select>
+
+          <label for="expenseDate">Fecha del gasto</label>
+          <input type="date" id="expenseDate" />
+
+          <label for="expensePaidBy">Quién realizó el pago</label>
+          <select id="expensePaidBy"></select>
+
+          <button type="submit" class="btn-primary">Agregar gasto</button>
+        </form>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-box">
+          <h3>Historial de gastos</h3>
+          <div class="filter-row">
+            <input type="text"   id="searchExpenses" placeholder="Buscar descripción..." />
+            <label>Desde:</label>
+            <input type="date"   id="filterFrom" />
+            <label>Hasta:</label>
+            <input type="date"   id="filterTo" />
+            <select id="filterCategory">
+              <option value="">Todas las categorías</option>
+              <option value="Comida">Comida</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Servicios">Servicios</option>
+              <option value="Entretenimiento">Entretenimiento</option>
+              <option value="Alquiler">Alquiler</option>
+              <option value="Limpieza">Limpieza</option>
+              <option value="Otro">Otro</option>
+            </select>
+            <select id="sortExpenses">
+              <option value="newest">Más reciente</option>
+              <option value="oldest">Más antiguo</option>
+              <option value="highest">Mayor monto</option>
+              <option value="lowest">Menor monto</option>
+            </select>
+            <button type="button" id="clearFilterBtn"  class="btn-light">Limpiar</button>
+            <button type="button" id="exportCsvBtn"    class="btn-secondary">Exportar CSV</button>
+          </div>
+          <div id="expensesList"></div>
+        </div>
+
+        <div class="detail-box">
+          <h3>Balance por persona</h3>
+          <div id="balancesList"></div>
+        </div>
+      </div>
+
+      <div class="detail-box">
+        <h3>Deudas dentro del grupo</h3>
+        <div id="debtsList"></div>
+      </div>
+
+      <!-- Historial de pagos realizados (NUEVA-A) -->
+      <div class="detail-box">
+        <h3>Pagos realizados</h3>
+        <div id="paymentsList"></div>
+      </div>
+
+      <!-- Estadísticas (SCRUM-35 + NUEVA-F) -->
+      <div class="detail-box">
+        <h3>Estadísticas del grupo</h3>
+        <div id="statsList"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Renombrar grupo (NUEVA-B) -->
+  <div id="renameGroupModal" class="modal hidden">
+    <div class="modal-content modal-content-sm">
+      <button class="close-btn" data-close="renameGroupModal">×</button>
+      <h2>Renombrar grupo</h2>
+      <p id="renameGroupMessage"></p>
+      <form id="renameGroupForm">
+        <label for="newGroupName">Nuevo nombre</label>
+        <input type="text" id="newGroupName" placeholder="Ingresá el nuevo nombre" />
+        <button type="submit" class="btn-primary">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Nota al pagar (NUEVA-E) -->
+  <div id="paymentNoteModal" class="modal hidden">
+    <div class="modal-content modal-content-sm">
+      <button class="close-btn" data-close="paymentNoteModal">×</button>
+      <h2>Confirmar pago</h2>
+      <p id="paymentNoteInfo"></p>
+      <form id="paymentNoteForm">
+        <label for="paymentNote">Nota (opcional)</label>
+        <input type="text" id="paymentNote" placeholder="Ej: transferencia, efectivo, MercadoPago..." />
+        <button type="submit" class="btn-secondary">Confirmar pago</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Recuperar contraseña (SCRUM-14) -->
+  <div id="forgotPasswordModal" class="modal hidden">
+    <div class="modal-content modal-content-sm">
+      <button class="close-btn" data-close="forgotPasswordModal">×</button>
+      <h2>Recuperar contraseña</h2>
+      <p id="forgotMessage"></p>
+
+      <form id="forgotEmailForm">
+        <label for="forgotEmail">Ingresá tu email registrado</label>
+        <input type="email" id="forgotEmail" placeholder="usuario@mail.com" />
+        <button type="submit" class="btn-primary">Verificar email</button>
+      </form>
+
+      <form id="forgotResetForm" class="hidden">
+        <label for="newPassRecovery">Nueva contraseña</label>
+        <input type="password" id="newPassRecovery" placeholder="Mínimo 6 caracteres" />
+        <label for="confirmPassRecovery">Confirmar contraseña</label>
+        <input type="password" id="confirmPassRecovery" placeholder="Repetí la contraseña" />
+        <button type="submit" class="btn-primary">Guardar nueva contraseña</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Editar perfil -->
+  <div id="editProfileModal" class="modal hidden">
+    <div class="modal-content modal-content-sm">
+      <button class="close-btn" data-close="editProfileModal">×</button>
+      <h2>Editar mi perfil</h2>
+      <p id="editProfileMessage"></p>
+      <form id="editProfileForm">
+        <label for="editName">Nombre</label>
+        <input type="text" id="editName" />
+        <label for="editLastname">Apellido</label>
+        <input type="text" id="editLastname" />
+        <label for="editPhone">Número de teléfono</label>
+        <input type="tel" id="editPhone" />
+        <label for="editEmail">Mail</label>
+        <input type="email" id="editEmail" disabled />
+        <hr class="profile-divider" />
+        <h3>Cambiar contraseña (opcional)</h3>
+        <label for="editCurrentPassword">Contraseña actual</label>
+        <input type="password" id="editCurrentPassword" placeholder="Ingresá tu contraseña actual" />
+        <label for="editNewPassword">Nueva contraseña</label>
+        <input type="password" id="editNewPassword" placeholder="Mínimo 6 caracteres" />
+        <button type="submit" class="btn-primary">Guardar cambios</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Editar gasto (SCRUM-57) -->
+  <div id="editExpenseModal" class="modal hidden">
+    <div class="modal-content modal-content-sm">
+      <button class="close-btn" data-close="editExpenseModal">×</button>
+      <h2>Editar gasto</h2>
+      <p id="editExpenseMessage"></p>
+      <form id="editExpenseForm">
+        <input type="hidden" id="editExpenseId" />
+        <label for="editExpenseDescription">Descripción</label>
+        <input type="text" id="editExpenseDescription" />
+        <label for="editExpenseAmount">Monto</label>
+        <input type="number" id="editExpenseAmount" min="1" step="0.01" />
+        <label for="editExpenseCategory">Categoría</label>
+        <select id="editExpenseCategory">
+          <option value="">Sin categoría</option>
+          <option value="Comida">Comida</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Servicios">Servicios</option>
+          <option value="Entretenimiento">Entretenimiento</option>
+          <option value="Alquiler">Alquiler</option>
+          <option value="Limpieza">Limpieza</option>
+          <option value="Otro">Otro</option>
+        </select>
+        <label for="editExpenseDate">Fecha</label>
+        <input type="date" id="editExpenseDate" />
+        <button type="submit" class="btn-primary">Guardar cambios</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Agregar miembro a grupo existente (SCRUM-60) -->
+  <div id="addMemberModal" class="modal hidden">
+    <div class="modal-content modal-content-sm">
+      <button class="close-btn" data-close="addMemberModal">×</button>
+      <h2>Agregar integrante</h2>
+      <p id="addMemberMessage"></p>
+      <form id="addMemberForm">
+        <label for="newMemberName">Nombre</label>
+        <input type="text" id="newMemberName" placeholder="Nombre del integrante" />
+        <label for="newMemberPhone">Teléfono</label>
+        <input type="tel" id="newMemberPhone" placeholder="Número de teléfono" />
+        <label for="newMemberRelation">Relación</label>
+        <select id="newMemberRelation">
+          <option value="">Seleccioná una relación</option>
+          <option value="Amigo">Amigo</option>
+          <option value="Familiar">Familiar</option>
+          <option value="Trabajo">Trabajo</option>
+        </select>
+        <button type="submit" class="btn-primary">Agregar</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ── Referencias DOM ───────────────────────────────────────────────────────
+    const registerForm      = document.getElementById('registerForm');
+    const loginForm         = document.getElementById('loginForm');
+    const authSection       = document.getElementById('authSection');
+    const mainSection       = document.getElementById('mainSection');
+    const logoutBtn         = document.getElementById('logoutBtn');
+    const editProfileBtn    = document.getElementById('editProfileBtn');
+    const welcomeTitle      = document.getElementById('welcomeTitle');
+
+    const registerMessage   = document.getElementById('registerMessage');
+    const loginMessage      = document.getElementById('loginMessage');
+    const createGroupMessage= document.getElementById('createGroupMessage');
+    const joinGroupMessage  = document.getElementById('joinGroupMessage');
+    const expenseMessage    = document.getElementById('expenseMessage');
+    const editProfileMessage= document.getElementById('editProfileMessage');
+    const editExpenseMessage= document.getElementById('editExpenseMessage');
+    const addMemberMessage    = document.getElementById('addMemberMessage');
+    const forgotMessage       = document.getElementById('forgotMessage');
+
+    const createGroupModal  = document.getElementById('createGroupModal');
+    const joinGroupModal    = document.getElementById('joinGroupModal');
+    const groupDetailModal  = document.getElementById('groupDetailModal');
+    const editProfileModal  = document.getElementById('editProfileModal');
+    const editExpenseModal      = document.getElementById('editExpenseModal');
+    const addMemberModal        = document.getElementById('addMemberModal');
+    const forgotPasswordModal   = document.getElementById('forgotPasswordModal');
+    const forgotEmailForm       = document.getElementById('forgotEmailForm');
+    const forgotResetForm       = document.getElementById('forgotResetForm');
+    const renameGroupModal      = document.getElementById('renameGroupModal');
+    const renameGroupForm       = document.getElementById('renameGroupForm');
+    const renameGroupMessage    = document.getElementById('renameGroupMessage');
+    const paymentNoteModal      = document.getElementById('paymentNoteModal');
+    const paymentNoteForm       = document.getElementById('paymentNoteForm');
+    const paymentNoteInfo       = document.getElementById('paymentNoteInfo');
+
+    const openCreateGroupBtn= document.getElementById('openCreateGroupBtn');
+    const openJoinGroupBtn  = document.getElementById('openJoinGroupBtn');
+    const createGroupForm   = document.getElementById('createGroupForm');
+    const joinGroupForm     = document.getElementById('joinGroupForm');
+    const expenseForm       = document.getElementById('expenseForm');
+    const editProfileForm   = document.getElementById('editProfileForm');
+    const editExpenseForm   = document.getElementById('editExpenseForm');
+    const addMemberForm     = document.getElementById('addMemberForm');
+    const addMemberBtn      = document.getElementById('addMemberBtn');
+    const membersContainer  = document.getElementById('membersContainer');
+    const groupsContainer   = document.getElementById('groupsContainer');
+
+    // ── Estado ────────────────────────────────────────────────────────────────
+    let users       = JSON.parse(localStorage.getItem('users'))       || [];
+    let groups      = JSON.parse(localStorage.getItem('groups'))      || [];
+    let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    let selectedGroupId = null;
+
+    // ── Utilidades ────────────────────────────────────────────────────────────
+    function saveData() {
+      localStorage.setItem('users',       JSON.stringify(users));
+      localStorage.setItem('groups',      JSON.stringify(groups));
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function formatMoney(amount) {
+      return `$${Number(amount).toLocaleString('es-AR', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+      })}`;
+    }
+
+    function showMessage(el, text, type) {
+      el.textContent = text;
+      el.className = type;
+    }
+
+    function getAllGroupPeople(group) {
+      return [
+        { id: currentUser.email, name: `${currentUser.name} ${currentUser.lastname}`,
+          phone: currentUser.phone, relation: 'Usuario registrado' },
+        ...group.members
+      ];
+    }
+
+    // ── Balances y deudas ─────────────────────────────────────────────────────
+    function calculateBalances(group) {
+      const people = getAllGroupPeople(group);
+      const balances = {};
+
+      people.forEach(p => {
+        balances[p.id] = { id: p.id, name: p.name, paid: 0, owes: 0, balance: 0 };
+      });
+
+      group.expenses.forEach(expense => {
+        const split = expense.amount / people.length;
+        people.forEach(p => { balances[p.id].owes += split; });
+        if (balances[expense.paidBy]) balances[expense.paidBy].paid += expense.amount;
+      });
+
+      // Pagos registrados (SCRUM-58)
+      (group.payments || []).forEach(payment => {
+        if (balances[payment.from]) balances[payment.from].paid  += payment.amount;
+        if (balances[payment.to])   balances[payment.to].owes   += payment.amount;
+      });
+
+      Object.keys(balances).forEach(id => {
+        balances[id].balance = balances[id].paid - balances[id].owes;
+      });
+
+      return balances;
+    }
+
+    function calculateDebts(group) {
+      const balances = calculateBalances(group);
+      const debtors = [], creditors = [];
+
+      Object.entries(balances).forEach(([id, person]) => {
+        const rounded = Number(person.balance.toFixed(2));
+        if (rounded < 0) debtors.push({ id, name: person.name, amount: Math.abs(rounded) });
+        if (rounded > 0) creditors.push({ id, name: person.name, amount: rounded });
+      });
+
+      const debts = [];
+      let di = 0, ci = 0;
+
+      while (di < debtors.length && ci < creditors.length) {
+        const d = debtors[di], c = creditors[ci];
+        const amount = Math.min(d.amount, c.amount);
+        debts.push({ fromId: d.id, from: d.name, toId: c.id, to: c.name, amount });
+        d.amount = Number((d.amount - amount).toFixed(2));
+        c.amount = Number((c.amount - amount).toFixed(2));
+        if (d.amount === 0) di++;
+        if (c.amount === 0) ci++;
+      }
+
+      return debts;
+    }
+
+    // ── Navegación ────────────────────────────────────────────────────────────
+    function showMainPage() {
+      authSection.classList.add('hidden');
+      mainSection.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      editProfileBtn.classList.remove('hidden');
+      welcomeTitle.textContent = `Bienvenido/a, ${currentUser.name}`;
+      renderGroups();
+      renderGlobalSummary();
+    }
+
+    function showAuthPage() {
+      authSection.classList.remove('hidden');
+      mainSection.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+      editProfileBtn.classList.add('hidden');
+    }
+
+    // ── Resumen global (NUEVA-C) ──────────────────────────────────────────────
+    function renderGlobalSummary() {
+      const div = document.getElementById('globalSummary');
+      const userGroups = groups.filter(g => g.users.includes(currentUser.email));
+
+      let totalOwed = 0, totalOwedToMe = 0, totalSpent = 0;
+
+      userGroups.forEach(group => {
+        totalSpent += group.expenses.reduce((s, e) => s + e.amount, 0);
+        const balances = calculateBalances(group);
+        const mine = balances[currentUser.email];
+        if (mine) {
+          if (mine.balance < 0) totalOwed    += Math.abs(mine.balance);
+          if (mine.balance > 0) totalOwedToMe += mine.balance;
+        }
+      });
+
+      div.innerHTML = `
+        <div class="summary-card">
+          <p>Grupos activos</p>
+          <span>${userGroups.length}</span>
+        </div>
+        <div class="summary-card">
+          <p>Total gastado (todos los grupos)</p>
+          <span>${formatMoney(totalSpent)}</span>
+        </div>
+        <div class="summary-card">
+          <p>Te deben en total</p>
+          <span class="positive">${formatMoney(totalOwedToMe)}</span>
+        </div>
+        <div class="summary-card">
+          <p>Debés en total</p>
+          <span class="negative">${formatMoney(totalOwed)}</span>
+        </div>
+      `;
+    }
+
+    // ── Grupos (lista principal) ───────────────────────────────────────────────
+    function renderGroups() {
+      groupsContainer.innerHTML = '';
+      const userGroups = groups.filter(g => g.users.includes(currentUser.email));
+
+      if (userGroups.length === 0) {
+        groupsContainer.innerHTML = '<div class="empty-state">Todavía no tenés grupos creados o unidos.</div>';
+        return;
+      }
+
+      userGroups.forEach(group => {
+        const total = group.expenses.reduce((s, e) => s + e.amount, 0);
+        const isCreator = group.createdBy === currentUser.email;
+        const card = document.createElement('div');
+        card.className = 'group-card';
+        card.innerHTML = `
+          <h3>${group.name}</h3>
+          <p><strong>Código:</strong> ${group.code}</p>
+          <p><strong>Integrantes:</strong> ${getAllGroupPeople(group).length}</p>
+          <p><strong>Total gastado:</strong> ${formatMoney(total)}</p>
+          ${isCreator ? '<p class="small-text" style="color:#4f46e5;margin-top:6px;">Sos el creador/a</p>' : ''}
+        `;
+        card.addEventListener('click', () => openGroupDetail(group.id));
+        groupsContainer.appendChild(card);
+      });
+    }
+
+    // ── Detalle del grupo ─────────────────────────────────────────────────────
+    function openGroupDetail(groupId) {
+      if (!currentUser) return; // SCRUM-38: solo usuarios autenticados
+      selectedGroupId = groupId;
+      const group = groups.find(g => g.id === groupId);
+      if (!group) return;
+
+      document.getElementById('detailGroupName').textContent = group.name;
+      document.getElementById('detailGroupCode').textContent = `Código del grupo: ${group.code}`;
+      document.getElementById('searchExpenses').value = '';
+      document.getElementById('filterFrom').value = '';
+      document.getElementById('filterTo').value = '';
+      document.getElementById('filterCategory').value = '';
+
+      renderGroupActions(group);
+      renderGroupDetails(group);
+      groupDetailModal.classList.remove('hidden');
+    }
+
+    function renderGroupActions(group) {
+      const div = document.getElementById('groupActions');
+      div.innerHTML = '';
+      const isCreator = group.createdBy === currentUser.email;
+
+      if (isCreator) {
+        const btnAddMember = document.createElement('button');
+        btnAddMember.className = 'btn-primary';
+        btnAddMember.textContent = 'Agregar integrante';
+        btnAddMember.addEventListener('click', () => {
+          addMemberMessage.textContent = '';
+          addMemberForm.reset();
+          addMemberModal.classList.remove('hidden');
+        });
+        div.appendChild(btnAddMember);
+
+        const btnRename = document.createElement('button');
+        btnRename.className = 'btn-light';
+        btnRename.textContent = 'Renombrar';
+        btnRename.addEventListener('click', () => {
+          document.getElementById('newGroupName').value = group.name;
+          renameGroupMessage.textContent = '';
+          renameGroupModal.classList.remove('hidden');
+        });
+        div.appendChild(btnRename);
+
+        const btnDelete = document.createElement('button');
+        btnDelete.className = 'btn-danger';
+        btnDelete.textContent = 'Eliminar grupo';
+        btnDelete.addEventListener('click', () => deleteGroup(group.id));
+        div.appendChild(btnDelete);
+      } else {
+        const btnLeave = document.createElement('button');
+        btnLeave.className = 'btn-warning';
+        btnLeave.textContent = 'Salir del grupo';
+        btnLeave.addEventListener('click', () => leaveGroup(group.id));
+        div.appendChild(btnLeave);
+      }
+    }
+
+    function renderGroupDetails(group, filteredExpenses) {
+      const people        = getAllGroupPeople(group);
+      const isCreator     = group.createdBy === currentUser.email;
+      const membersDiv    = document.getElementById('detailMembers');
+      const paidBySelect  = document.getElementById('expensePaidBy');
+      const expensesList  = document.getElementById('expensesList');
+      const balancesList  = document.getElementById('balancesList');
+      const debtsList     = document.getElementById('debtsList');
+      const myBalanceText = document.getElementById('myBalanceText');
+
+      membersDiv.innerHTML  = '';
+      paidBySelect.innerHTML= '';
+      expensesList.innerHTML= '';
+      balancesList.innerHTML= '';
+      debtsList.innerHTML   = '';
+      document.getElementById('paymentsList').innerHTML = '';
+      document.getElementById('statsList').innerHTML = '';
+
+      // Miembros (SCRUM-61: botón eliminar para el creador)
+      people.forEach(person => {
+        const item = document.createElement('div');
+        item.className = 'member-item';
+
+        const info = document.createElement('span');
+        info.className = 'member-item-info';
+        info.textContent = `${person.name} — ${person.phone} — ${person.relation}`;
+        item.appendChild(info);
+
+        const isManualMember = person.id !== currentUser.email && !person.id.startsWith('reg-');
+        if (isCreator && isManualMember) {
+          const btnDel = document.createElement('button');
+          btnDel.className = 'btn-danger';
+          btnDel.textContent = 'Eliminar';
+          btnDel.addEventListener('click', () => removeMember(group.id, person.id));
+          item.appendChild(btnDel);
+        }
+
+        membersDiv.appendChild(item);
+
+        const option = document.createElement('option');
+        option.value = person.id;
+        option.textContent = person.name;
+        paidBySelect.appendChild(option);
+      });
+
+      // Historial de gastos
+      const toShow = filteredExpenses !== undefined ? filteredExpenses : group.expenses;
+
+      if (toShow.length === 0) {
+        expensesList.innerHTML = '<p class="small-text">No hay gastos para mostrar.</p>';
+      } else {
+        toShow.forEach(expense => {
+          const payer    = people.find(p => p.id === expense.paidBy);
+          const split    = expense.amount / people.length;
+          const canEdit  = expense.paidBy === currentUser.email || isCreator;
+          const catClass = expense.category ? `cat-${expense.category}` : 'cat-Otro';
+
+          const item = document.createElement('div');
+          item.className = 'expense-item';
+          item.innerHTML = `
+            <div class="expense-item-header">
+              <div>
+                ${expense.category ? `<span class="category-badge ${catClass}">${expense.category}</span>` : ''}
+                <p><strong>${expense.description}</strong></p>
+                <p>Monto: ${formatMoney(expense.amount)}</p>
+                <p>Pagó: ${payer ? payer.name : 'Sin datos'}</p>
+                ${expense.date ? `<p class="small-text">Fecha: ${expense.date}</p>` : ''}
+                <p class="small-text">Registrado: ${expense.createdAt}</p>
+                <p class="small-text">Dividido: ${formatMoney(split)} por persona</p>
+              </div>
+              ${canEdit ? `
+                <div class="expense-item-actions">
+                  <button type="button" class="btn-light"   data-edit="${expense.id}">Editar</button>
+                  <button type="button" class="btn-danger"  data-delete="${expense.id}">Eliminar</button>
+                </div>` : ''}
+            </div>
+          `;
+
+          if (canEdit) {
+            item.querySelector('[data-edit]').addEventListener('click',   () => openEditExpense(group.id, expense.id));
+            item.querySelector('[data-delete]').addEventListener('click', () => deleteExpense(group.id, expense.id));
+          }
+
+          expensesList.appendChild(item);
+        });
+      }
+
+      // Mi saldo
+      const balances  = calculateBalances(group);
+      const myBalance = balances[currentUser.email]?.balance || 0;
+
+      if      (myBalance > 0) myBalanceText.innerHTML = `<span class="positive">Te deben ${formatMoney(myBalance)}</span>`;
+      else if (myBalance < 0) myBalanceText.innerHTML = `<span class="negative">Debés ${formatMoney(Math.abs(myBalance))}</span>`;
+      else                    myBalanceText.innerHTML = `<span class="neutral">Estás en cero</span>`;
+
+      // Balance por persona
+      Object.values(balances).forEach(person => {
+        let cls = 'neutral', txt = 'Está en cero';
+        if (person.balance > 0) { cls = 'positive'; txt = `Le deben ${formatMoney(person.balance)}`; }
+        if (person.balance < 0) { cls = 'negative'; txt = `Debe ${formatMoney(Math.abs(person.balance))}`; }
+
+        const item = document.createElement('div');
+        item.className = 'balance-item';
+        item.innerHTML = `
+          <p><strong>${person.name}</strong></p>
+          <p>Pagó: ${formatMoney(person.paid)}</p>
+          <p>Le correspondía: ${formatMoney(person.owes)}</p>
+          <p class="${cls}">${txt}</p>
+        `;
+        balancesList.appendChild(item);
+      });
+
+      // Deudas (SCRUM-58: marcar como pagado)
+      const debts = calculateDebts(group);
+
+      if (debts.length === 0) {
+        debtsList.innerHTML = '<p class="small-text">No hay deudas pendientes.</p>';
+      } else {
+        debts.forEach(debt => {
+          const canPay = debt.fromId === currentUser.email || isCreator;
+          const item = document.createElement('div');
+          item.className = 'debt-item';
+          item.innerHTML = `
+            <div class="debt-item-header">
+              <div>
+                <p><strong>${debt.from}</strong> le debe a <strong>${debt.to}</strong></p>
+                <p class="negative">${formatMoney(debt.amount)}</p>
+              </div>
+              ${canPay ? `<button type="button" class="btn-secondary" data-pay>Marcar como pagado</button>` : ''}
+            </div>
+          `;
+
+          if (canPay) {
+            item.querySelector('[data-pay]').addEventListener('click', () => markDebtPaid(group, debt));
+          }
+
+          debtsList.appendChild(item);
+        });
+      }
+
+      // Historial de pagos realizados (NUEVA-A)
+      renderPayments(group);
+
+      // Estadísticas (SCRUM-35 + NUEVA-F)
+      renderStats(group, filteredExpenses);
+    }
+
+    // ── Historial de pagos realizados (NUEVA-A) ───────────────────────────────
+    function renderPayments(group) {
+      const div    = document.getElementById('paymentsList');
+      const people = getAllGroupPeople(group);
+      const payments = group.payments || [];
+
+      if (payments.length === 0) {
+        div.innerHTML = '<p class="small-text">No hay pagos registrados todavía.</p>';
+        return;
+      }
+
+      payments.forEach(p => {
+        const fromPerson = people.find(x => x.id === p.from);
+        const toPerson   = people.find(x => x.id === p.to);
+        const item = document.createElement('div');
+        item.className = 'payment-item';
+        item.innerHTML = `
+          <p><strong>${fromPerson ? fromPerson.name : 'Alguien'}</strong> le pagó <strong>${toPerson ? toPerson.name : 'alguien'}</strong> — ${formatMoney(p.amount)}</p>
+          <p class="small-text">${p.createdAt}</p>
+          ${p.note ? `<p class="payment-note">Nota: ${p.note}</p>` : ''}
+        `;
+        div.appendChild(item);
+      });
+    }
+
+    // ── Estadísticas (SCRUM-35 + NUEVA-F) ────────────────────────────────────
+    function renderStats(group, filteredExpenses) {
+      const statsList = document.getElementById('statsList');
+      const people    = getAllGroupPeople(group);
+      const expenses  = filteredExpenses !== undefined ? filteredExpenses : group.expenses;
+
+      if (expenses.length === 0) {
+        statsList.innerHTML = '<p class="small-text">Todavía no hay gastos cargados.</p>';
+        return;
+      }
+
+      const total = expenses.reduce((s, e) => s + e.amount, 0);
+
+      let html = `
+        <div class="stat-row">
+          <span><strong>Total del grupo</strong></span>
+          <span class="stat-right"><strong>${formatMoney(total)}</strong></span>
+        </div>`;
+
+      // Por categoría
+      const byCat = {};
+      expenses.forEach(e => {
+        const cat = e.category || 'Sin categoría';
+        byCat[cat] = (byCat[cat] || 0) + e.amount;
+      });
+
+      const catEntries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+      if (catEntries.length > 0) {
+        html += `<p class="stat-section-title">Por categoría</p>`;
+        catEntries.forEach(([cat, amt]) => {
+          const pct = ((amt / total) * 100).toFixed(1);
+          html += `
+            <div class="stat-row">
+              <span>${cat}</span>
+              <div class="stat-bar-wrap"><div class="stat-bar" style="width:${pct}%"></div></div>
+              <span class="stat-right">${formatMoney(amt)} <span class="small-text">(${pct}%)</span></span>
+            </div>`;
+        });
+      }
+
+      // Por persona (quién pagó)
+      const balances = calculateBalances(group);
+      const personEntries = Object.values(balances).sort((a, b) => b.paid - a.paid);
+      html += `<p class="stat-section-title">Pagos por persona</p>`;
+      personEntries.forEach(p => {
+        const pct = total > 0 ? ((p.paid / total) * 100).toFixed(1) : 0;
+        html += `
+          <div class="stat-row">
+            <span>${p.name}</span>
+            <div class="stat-bar-wrap"><div class="stat-bar" style="width:${pct}%"></div></div>
+            <span class="stat-right">${formatMoney(p.paid)} <span class="small-text">(${pct}%)</span></span>
+          </div>`;
+      });
+
+      // Promedio por persona (NUEVA-F)
+      const avg = people.length > 0 ? total / people.length : 0;
+      html += `
+        <p class="stat-section-title">Referencia</p>
+        <div class="stat-row">
+          <span>Integrantes</span>
+          <span class="stat-right"><strong>${people.length}</strong></span>
+        </div>
+        <div class="stat-row">
+          <span>Promedio de gasto por persona</span>
+          <span class="stat-right"><strong>${formatMoney(avg)}</strong></span>
+        </div>`;
+
+      statsList.innerHTML = html;
+    }
+
+    // ── Filtros + ordenamiento (SCRUM-34 + SCRUM-62 + SCRUM-59 + NUEVA-D) ────
+    function applyFilters() {
+      const group = groups.find(g => g.id === selectedGroupId);
+      if (!group) return;
+
+      const search   = document.getElementById('searchExpenses').value.toLowerCase().trim();
+      const from     = document.getElementById('filterFrom').value;
+      const to       = document.getElementById('filterTo').value;
+      const category = document.getElementById('filterCategory').value;
+      const sort     = document.getElementById('sortExpenses').value;
+
+      let filtered = group.expenses.filter(e => {
+        if (search   && !e.description.toLowerCase().includes(search)) return false;
+        if (from     && e.date && e.date < from)  return false;
+        if (to       && e.date && e.date > to)    return false;
+        if (category && e.category !== category)  return false;
+        return true;
+      });
+
+      if (sort === 'newest')  filtered = [...filtered].sort((a,b) => (b.date||b.createdAt) > (a.date||a.createdAt) ? 1 : -1);
+      if (sort === 'oldest')  filtered = [...filtered].sort((a,b) => (a.date||a.createdAt) > (b.date||b.createdAt) ? 1 : -1);
+      if (sort === 'highest') filtered = [...filtered].sort((a,b) => b.amount - a.amount);
+      if (sort === 'lowest')  filtered = [...filtered].sort((a,b) => a.amount - b.amount);
+
+      renderGroupDetails(group, filtered);
+    }
+
+    document.getElementById('searchExpenses').addEventListener('input', applyFilters);
+    document.getElementById('filterFrom').addEventListener('change', applyFilters);
+    document.getElementById('filterTo').addEventListener('change', applyFilters);
+    document.getElementById('filterCategory').addEventListener('change', applyFilters);
+    document.getElementById('sortExpenses').addEventListener('change', applyFilters);
+
+    document.getElementById('clearFilterBtn').addEventListener('click', () => {
+      document.getElementById('searchExpenses').value = '';
+      document.getElementById('filterFrom').value     = '';
+      document.getElementById('filterTo').value       = '';
+      document.getElementById('filterCategory').value = '';
+      document.getElementById('sortExpenses').value   = 'newest';
+      const group = groups.find(g => g.id === selectedGroupId);
+      if (group) renderGroupDetails(group);
+    });
+
+    // ── Exportar CSV (SCRUM-63) ───────────────────────────────────────────────
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+      const group = groups.find(g => g.id === selectedGroupId);
+      if (!group) return;
+
+      const people = getAllGroupPeople(group);
+      const rows   = [['Descripción','Categoría','Monto','Fecha','Registrado','Pagó','Parte por persona']];
+
+      group.expenses.forEach(e => {
+        const payer = people.find(p => p.id === e.paidBy);
+        const split = (e.amount / people.length).toFixed(2);
+        rows.push([
+          e.description,
+          e.category || '',
+          e.amount.toFixed(2),
+          e.date || '',
+          e.createdAt,
+          payer ? payer.name : '',
+          split
+        ]);
+      });
+
+      const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${group.name}_gastos.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // ── Marcar deuda como pagada + nota (SCRUM-58 + NUEVA-E) ─────────────────
+    let pendingPayment = null;
+
+    function markDebtPaid(group, debt) {
+      pendingPayment = { group, debt };
+      paymentNoteInfo.textContent = `${debt.from} le paga ${formatMoney(debt.amount)} a ${debt.to}`;
+      document.getElementById('paymentNote').value = '';
+      paymentNoteModal.classList.remove('hidden');
+    }
+
+    paymentNoteForm.addEventListener('submit', event => {
+      event.preventDefault();
+      if (!pendingPayment) return;
+
+      const { group, debt } = pendingPayment;
+      const note = document.getElementById('paymentNote').value.trim();
+
+      group.payments = group.payments || [];
+      group.payments.push({
+        id: Date.now(),
+        from: debt.fromId,
+        to: debt.toId,
+        amount: debt.amount,
+        note: note || null,
+        createdAt: new Date().toLocaleString('es-AR')
+      });
+
+      saveData();
+      pendingPayment = null;
+      paymentNoteModal.classList.add('hidden');
+      renderGroupDetails(group);
+      renderGroups();
+      renderGlobalSummary();
+    });
+
+    // ── Renombrar grupo (NUEVA-B) ─────────────────────────────────────────────
+    renameGroupForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const group = groups.find(g => g.id === selectedGroupId);
+      if (!group) return;
+
+      const newName = document.getElementById('newGroupName').value.trim();
+      if (!newName) {
+        showMessage(renameGroupMessage, 'El nombre no puede estar vacío.', 'error'); return;
+      }
+
+      group.name = newName;
+      saveData();
+      document.getElementById('detailGroupName').textContent = newName;
+      renameGroupModal.classList.add('hidden');
+      renderGroups();
+      renderGlobalSummary();
+    });
+
+    // ── Editar gasto (SCRUM-57) ───────────────────────────────────────────────
+    function openEditExpense(groupId, expenseId) {
+      const group   = groups.find(g => g.id === groupId);
+      const expense = group?.expenses.find(e => e.id === expenseId);
+      if (!expense) return;
+
+      document.getElementById('editExpenseId').value          = expenseId;
+      document.getElementById('editExpenseDescription').value = expense.description;
+      document.getElementById('editExpenseAmount').value      = expense.amount;
+      document.getElementById('editExpenseCategory').value    = expense.category || '';
+      document.getElementById('editExpenseDate').value        = expense.date || '';
+      editExpenseMessage.textContent = '';
+      editExpenseModal.classList.remove('hidden');
+    }
+
+    editExpenseForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const group     = groups.find(g => g.id === selectedGroupId);
+      if (!group) return;
+
+      const id          = Number(document.getElementById('editExpenseId').value);
+      const description = document.getElementById('editExpenseDescription').value.trim();
+      const amount      = Number(document.getElementById('editExpenseAmount').value);
+      const category    = document.getElementById('editExpenseCategory').value;
+      const date        = document.getElementById('editExpenseDate').value;
+
+      if (!description || !amount) {
+        showMessage(editExpenseMessage, 'Descripción y monto son obligatorios.', 'error');
+        return;
+      }
+
+      if (amount <= 0) {
+        showMessage(editExpenseMessage, 'El monto debe ser mayor a cero.', 'error');
+        return;
+      }
+
+      const expense = group.expenses.find(e => e.id === id);
+      if (!expense) return;
+
+      expense.description = description;
+      expense.amount      = amount;
+      expense.category    = category;
+      expense.date        = date;
+
+      saveData();
+      editExpenseModal.classList.add('hidden');
+      renderGroupDetails(group);
+      renderGroups();
+    });
+
+    // ── Eliminar gasto ────────────────────────────────────────────────────────
+    function deleteExpense(groupId, expenseId) {
+      if (!confirm('¿Eliminar este gasto? Esta acción no se puede deshacer.')) return;
+
+      const group = groups.find(g => g.id === groupId);
+      if (!group) return;
+
+      group.expenses = group.expenses.filter(e => e.id !== expenseId);
+      saveData();
+      renderGroupDetails(group);
+      renderGroups();
+      renderGlobalSummary();
+    }
+
+    // ── Agregar miembro a grupo existente (SCRUM-60) ──────────────────────────
+    addMemberForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const group    = groups.find(g => g.id === selectedGroupId);
+      if (!group) return;
+
+      const name     = document.getElementById('newMemberName').value.trim();
+      const phone    = document.getElementById('newMemberPhone').value.trim();
+      const relation = document.getElementById('newMemberRelation').value;
+
+      if (!name || !phone || !relation) {
+        showMessage(addMemberMessage, 'Todos los campos son obligatorios.', 'error');
+        return;
+      }
+
+      group.members.push({
+        id:       `member-${Date.now()}-${Math.random()}`,
+        name,
+        phone,
+        relation
+      });
+
+      saveData();
+      addMemberModal.classList.add('hidden');
+      renderGroupActions(group);
+      renderGroupDetails(group);
+      renderGroups();
+    });
+
+    // ── Eliminar miembro (SCRUM-61) ───────────────────────────────────────────
+    function removeMember(groupId, memberId) {
+      const group  = groups.find(g => g.id === groupId);
+      if (!group) return;
+
+      const hasPaid = group.expenses.some(e => e.paidBy === memberId);
+      if (hasPaid) {
+        alert('No se puede eliminar a este integrante porque tiene gastos registrados a su nombre.');
+        return;
+      }
+
+      if (!confirm('¿Eliminar a este integrante del grupo?')) return;
+
+      group.members = group.members.filter(m => m.id !== memberId);
+      saveData();
+      renderGroupDetails(group);
+      renderGroups();
+    }
+
+    // ── Salir / eliminar grupo ────────────────────────────────────────────────
+    function leaveGroup(groupId) {
+      if (!confirm('¿Estás seguro/a de que querés salir de este grupo?')) return;
+      const group = groups.find(g => g.id === groupId);
+      if (!group) return;
+      group.users = group.users.filter(e => e !== currentUser.email);
+      saveData();
+      groupDetailModal.classList.add('hidden');
+      renderGroups();
+      renderGlobalSummary();
+    }
+
+    function deleteGroup(groupId) {
+      if (!confirm('¿Eliminar este grupo? Esta acción no se puede deshacer.')) return;
+      groups = groups.filter(g => g.id !== groupId);
+      saveData();
+      groupDetailModal.classList.add('hidden');
+      renderGroups();
+      renderGlobalSummary();
+    }
+
+    // ── Formularios de auth ───────────────────────────────────────────────────
+    registerForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const name     = document.getElementById('name').value.trim();
+      const lastname = document.getElementById('lastname').value.trim();
+      const phone    = document.getElementById('phone').value.trim();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (!name || !lastname || !phone || !email || !password) {
+        showMessage(registerMessage, 'Todos los campos son obligatorios.', 'error'); return;
+      }
+      if (!isValidEmail(email)) {
+        showMessage(registerMessage, 'El email ingresado no es válido.', 'error'); return;
+      }
+      if (password.length < 6) {
+        showMessage(registerMessage, 'La contraseña debe tener al menos 6 caracteres.', 'error'); return;
+      }
+      if (users.some(u => u.email === email)) {
+        showMessage(registerMessage, 'Ya existe un usuario registrado con ese email.', 'error'); return;
+      }
+
+      currentUser = { name, lastname, phone, email, password };
+      users.push(currentUser);
+      saveData();
+      showMessage(registerMessage, 'Cuenta creada correctamente.', 'success');
+      registerForm.reset();
+      showMainPage();
+    });
+
+    loginForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const email    = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+
+      if (!email || !password) {
+        showMessage(loginMessage, 'Tenés que ingresar email y contraseña.', 'error'); return;
+      }
+
+      const found = users.find(u => u.email === email && u.password === password);
+      if (!found) {
+        showMessage(loginMessage, 'El usuario no existe o la contraseña es incorrecta.', 'error'); return;
+      }
+
+      currentUser = found;
+      saveData();
+      loginForm.reset();
+      showMainPage();
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      currentUser = null;
+      localStorage.removeItem('currentUser');
+      showAuthPage();
+    });
+
+    // ── Recuperar contraseña (SCRUM-14) ───────────────────────────────────────
+    let forgotUserEmail = null;
+
+    document.getElementById('forgotPasswordLink').addEventListener('click', () => {
+      forgotMessage.textContent = '';
+      forgotEmailForm.reset();
+      forgotResetForm.classList.add('hidden');
+      forgotEmailForm.classList.remove('hidden');
+      forgotUserEmail = null;
+      forgotPasswordModal.classList.remove('hidden');
+    });
+
+    forgotEmailForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const email = document.getElementById('forgotEmail').value.trim();
+
+      if (!email) {
+        showMessage(forgotMessage, 'Ingresá tu email.', 'error'); return;
+      }
+
+      const found = users.find(u => u.email === email);
+      if (!found) {
+        showMessage(forgotMessage, 'No existe ningún usuario registrado con ese email.', 'error'); return;
+      }
+
+      forgotUserEmail = email;
+      forgotMessage.textContent = '';
+      forgotEmailForm.classList.add('hidden');
+      forgotResetForm.classList.remove('hidden');
+      showMessage(forgotMessage, 'Email verificado. Escribí tu nueva contraseña.', 'success');
+    });
+
+    forgotResetForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const newPass     = document.getElementById('newPassRecovery').value;
+      const confirmPass = document.getElementById('confirmPassRecovery').value;
+
+      if (newPass.length < 6) {
+        showMessage(forgotMessage, 'La nueva contraseña debe tener al menos 6 caracteres.', 'error'); return;
+      }
+      if (newPass !== confirmPass) {
+        showMessage(forgotMessage, 'Las contraseñas no coinciden.', 'error'); return;
+      }
+
+      const idx = users.findIndex(u => u.email === forgotUserEmail);
+      if (idx !== -1) {
+        users[idx].password = newPass;
+        saveData();
+      }
+
+      showMessage(forgotMessage, 'Contraseña actualizada correctamente. Ya podés iniciar sesión.', 'success');
+      forgotResetForm.classList.add('hidden');
+      setTimeout(() => forgotPasswordModal.classList.add('hidden'), 2000);
+    });
+
+    // ── Editar perfil ─────────────────────────────────────────────────────────
+    editProfileBtn.addEventListener('click', () => {
+      document.getElementById('editName').value              = currentUser.name;
+      document.getElementById('editLastname').value          = currentUser.lastname;
+      document.getElementById('editPhone').value             = currentUser.phone;
+      document.getElementById('editEmail').value             = currentUser.email;
+      document.getElementById('editCurrentPassword').value   = '';
+      document.getElementById('editNewPassword').value       = '';
+      editProfileMessage.textContent = '';
+      editProfileModal.classList.remove('hidden');
+    });
+
+    editProfileForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const name            = document.getElementById('editName').value.trim();
+      const lastname        = document.getElementById('editLastname').value.trim();
+      const phone           = document.getElementById('editPhone').value.trim();
+      const currentPassword = document.getElementById('editCurrentPassword').value;
+      const newPassword     = document.getElementById('editNewPassword').value;
+
+      if (!name || !lastname || !phone) {
+        showMessage(editProfileMessage, 'Nombre, apellido y teléfono son obligatorios.', 'error'); return;
+      }
+
+      if (currentPassword || newPassword) {
+        if (currentPassword !== currentUser.password) {
+          showMessage(editProfileMessage, 'La contraseña actual es incorrecta.', 'error'); return;
+        }
+        if (newPassword.length < 6) {
+          showMessage(editProfileMessage, 'La nueva contraseña debe tener al menos 6 caracteres.', 'error'); return;
+        }
+        currentUser.password = newPassword;
+      }
+
+      currentUser.name = name;
+      currentUser.lastname = lastname;
+      currentUser.phone = phone;
+
+      const idx = users.findIndex(u => u.email === currentUser.email);
+      if (idx !== -1) users[idx] = { ...users[idx], ...currentUser };
+
+      saveData();
+      showMessage(editProfileMessage, 'Perfil actualizado correctamente.', 'success');
+      welcomeTitle.textContent = `Bienvenido/a, ${currentUser.name}`;
+    });
+
+    // ── Crear grupo ───────────────────────────────────────────────────────────
+    openCreateGroupBtn.addEventListener('click', () => {
+      createGroupMessage.textContent = '';
+      membersContainer.innerHTML = '';
+      addMemberRow();
+      createGroupModal.classList.remove('hidden');
+    });
+
+    function addMemberRow() {
+      const row = document.createElement('div');
+      row.className = 'member-row';
+      row.innerHTML = `
+        <input type="text" class="member-name" placeholder="Nombre" />
+        <input type="tel"  class="member-phone" placeholder="Teléfono" />
+        <select class="member-relation">
+          <option value="">Relación</option>
+          <option value="Amigo">Amigo</option>
+          <option value="Familiar">Familiar</option>
+          <option value="Trabajo">Trabajo</option>
+        </select>
+        <button type="button" class="btn-danger remove-member">Eliminar</button>
+      `;
+      row.querySelector('.remove-member').addEventListener('click', () => row.remove());
+      membersContainer.appendChild(row);
+    }
+
+    addMemberBtn.addEventListener('click', addMemberRow);
+
+    createGroupForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const groupName = document.getElementById('groupName').value.trim();
+      const groupCode = document.getElementById('groupCode').value.trim();
+
+      if (!groupName) { showMessage(createGroupMessage, 'El nombre del grupo no puede estar vacío.', 'error'); return; }
+      if (!groupCode) { showMessage(createGroupMessage, 'El código del grupo no puede estar vacío.', 'error'); return; }
+      if (groups.some(g => g.code.toLowerCase() === groupCode.toLowerCase())) {
+        showMessage(createGroupMessage, 'Ya existe un grupo con ese código.', 'error'); return;
+      }
+
+      const members = [];
+      document.querySelectorAll('.member-row').forEach(row => {
+        const name     = row.querySelector('.member-name').value.trim();
+        const phone    = row.querySelector('.member-phone').value.trim();
+        const relation = row.querySelector('.member-relation').value;
+        if (name && phone && relation) {
+          members.push({ id: `member-${Date.now()}-${Math.random()}`, name, phone, relation });
+        }
+      });
+
+      if (members.length === 0) {
+        showMessage(createGroupMessage, 'Agregá al menos un integrante con todos sus datos.', 'error'); return;
+      }
+
+      groups.push({
+        id: Date.now(), name: groupName, code: groupCode,
+        createdBy: currentUser.email,
+        members, users: [currentUser.email],
+        expenses: [], payments: []
+      });
+
+      saveData();
+      createGroupForm.reset();
+      createGroupModal.classList.add('hidden');
+      renderGroups();
+      renderGlobalSummary();
+    });
+
+    // ── Unirse a grupo ────────────────────────────────────────────────────────
+    openJoinGroupBtn.addEventListener('click', () => {
+      joinGroupMessage.textContent = '';
+      joinGroupForm.reset();
+      joinGroupModal.classList.remove('hidden');
+    });
+
+    joinGroupForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const code = document.getElementById('joinCode').value.trim();
+      if (!code) { showMessage(joinGroupMessage, 'Tenés que ingresar un código de grupo.', 'error'); return; }
+
+      const group = groups.find(g => g.code.toLowerCase() === code.toLowerCase());
+      if (!group) { showMessage(joinGroupMessage, 'El código ingresado no corresponde a ningún grupo.', 'error'); return; }
+      if (group.users.includes(currentUser.email)) { showMessage(joinGroupMessage, 'Ya pertenecés a este grupo.', 'error'); return; }
+
+      group.users.push(currentUser.email);
+      saveData();
+      joinGroupModal.classList.add('hidden');
+      renderGroups();
+    });
+
+    // ── Agregar gasto ─────────────────────────────────────────────────────────
+    expenseForm.addEventListener('submit', event => {
+      event.preventDefault();
+      if (!currentUser) return; // SCRUM-38: solo usuarios autenticados
+      const group = groups.find(g => g.id === selectedGroupId);
+      if (!group) return;
+
+      const description = document.getElementById('expenseDescription').value.trim();
+      const amount      = Number(document.getElementById('expenseAmount').value);
+      const category    = document.getElementById('expenseCategory').value;
+      const date        = document.getElementById('expenseDate').value;
+      const paidBy      = document.getElementById('expensePaidBy').value;
+
+      if (!description || !amount || !paidBy) {
+        showMessage(expenseMessage, 'Completá la descripción, el monto y quién realizó el pago.', 'error'); return;
+      }
+      if (amount <= 0) {
+        showMessage(expenseMessage, 'El monto debe ser mayor a cero.', 'error'); return;
+      }
+
+      group.expenses.push({
+        id: Date.now(), description, amount, category, date, paidBy,
+        createdAt: new Date().toLocaleString('es-AR')
+      });
+
+      saveData();
+      expenseForm.reset();
+      expenseMessage.textContent = '';
+      renderGroupDetails(group);
+      renderGroups();
+      renderGlobalSummary();
+    });
+
+    // ── Cerrar modales ────────────────────────────────────────────────────────
+    document.querySelectorAll('.close-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(btn.dataset.close).classList.add('hidden');
+      });
+    });
+
+    window.addEventListener('click', event => {
+      if (event.target.classList.contains('modal')) {
+        event.target.classList.add('hidden');
+      }
+    });
+
+    // ── Migración de datos existentes ─────────────────────────────────────────
+    groups = groups.map(group => ({
+      ...group,
+      payments: group.payments || [],
+      expenses: (group.expenses || []).map(e => ({
+        category: '', date: '', ...e
+      })),
+      members: (group.members || []).map(m => ({
+        id: m.id || `member-${Date.now()}-${Math.random()}`,
+        ...m
+      }))
+    }));
+    saveData();
+
+    // ── Inicio ────────────────────────────────────────────────────────────────
+    if (currentUser) showMainPage();
+    else             showAuthPage();
+  </script>
+</body>
+</html>
