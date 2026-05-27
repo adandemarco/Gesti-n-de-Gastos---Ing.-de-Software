@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Gastos Compartidos</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f6f8;
+      color: #222;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #4f46e5;
+      color: white;
+      padding: 18px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 22px;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1100px;
+      margin: 30px auto;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      margin-bottom: 25px;
+    }
+
+    .auth-wrapper {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+    }
+
+    h2 {
+      margin-bottom: 18px;
+      color: #333;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 11px;
+      margin-bottom: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 11px 18px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: #4f46e5;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-light {
+      background: #e5e7eb;
+      color: #222;
+    }
+
+    .error {
+      color: #dc2626;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .success {
+      color: #059669;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .main-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+
+    .group-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      padding: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .group-card:hover {
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .group-card h3 {
+      margin-bottom: 8px;
+      color: #4f46e5;
+    }
+
+    .member-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 10;
+    }
+
+    .modal-content {
+      background: white;
+      width: 100%;
+      max-width: 850px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 16px;
+      padding: 25px;
+      position: relative;
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: transparent;
+      font-size: 22px;
+      color: #555;
+    }
+
+    .detail-box {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 12px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 15px;
+    }
+
+    ul {
+      margin-left: 20px;
+      margin-top: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #666;
+      padding: 25px;
+      background: white;
+      border-radius: 12px;
+    }
+
+    .expense-item, .balance-item, .debt-item {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .positive {
+      color: #059669;
+      font-weight: bold;
+    }
+
+    .negative {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    .neutral {
+      color: #555;
+      font-weight: bold;
+    }
+
+    .small-text {
+      font-size: 13px;
+      color: #666;
+    }
+
+    @media (max-width: 650px) {
+      header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+
+      .member-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gastos Compartidos</h1>
+    <button id="logoutBtn" class="btn-light hidden">Cerrar sesión</button>
+  </header>
+
+  <main class="container">
+    <section id="authSection" class="auth-wrapper">
+      <div class="card">
+        <h2>Registro</h2>
+        <p id="registerMessage"></p>
+
+        <form id="registerForm">
+          <label for="name">Nombre</label>
+          <input type="text" id="name" placeholder="Ej: Salomé" />
+
+          <label for="lastname">Apellido</label>
+          <input type="text" id="lastname" placeholder="Ej: Torres" />
+
+          <label for="phone">Número de teléfono</label>
+          <input type="tel" id="phone" placeholder="Ej: 11 1234-5678" />
+
+          <label for="email">Mail</label>
+          <input type="email" id="email" placeholder="Ej: usuario@mail.com" />
+
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="Mínimo 6 caracteres" />
+
+          <button type="submit" class="btn-primary">Crear cuenta</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Iniciar sesión</h2>
+        <p id="loginMessage"></p>
+
+        <form id="loginForm">
+          <label for="loginEmail">Mail</label>
+          <input type="email" id="loginEmail" placeholder="Ej: usuario@mail.com" />
+
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" />
+
+          <button type="submit" class="btn-secondary">Ingresar</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="mainSection" class="hidden">
+      <div class="card">
+        <h2 id="welcomeTitle">Página principal</h2>
+        <p>Desde acá podés crear grupos, unirte por código y ver los grupos disponibles.</p>
+      </div>
+
+      <div class="main-actions">
+        <button id="openCreateGroupBtn" class="btn-primary">Nuevo Grupo</button>
+        <button id="openJoinGroupBtn" class="btn-secondary">Unirme a un grupo</button>
+      </div>
+
+      <h2>Mis grupos</h2>
+      <div id="groupsContainer" class="groups-grid"></div>
+    </section>
+  </main>
+
+  <div id="createGroupModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" data-close="createGroupModal">×</button>
+      <h2>Crear nuevo grupo</h2>
+      <p id="createGroupMessage"></p>
+
+      <form id="createGroupForm">
+        <label for="groupName">Nombre del grupo</label>
+        <input type="text" id="groupName" placeholder="Ej: Roommates Depto Devoto" />
+
+        <label for="groupCode">Código del grupo</label>
+        <input type="text" id="groupCode" placeholder="Ej: DEVOTO2026" />
+
+        <h3>Integrantes</h3>
+        <div id="membersContainer"></div>
+
+        <button type="button" id="addMemberBtn" class="btn-light">Agregar integrante</button>
+        <br><br>
+        <button type="submit" class="btn-primary">Crear grupo</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="joinGroupModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" data-close="joinGroupModal">×</button>
+      <h2>Unirme a un grupo</h2>
+      <p id="joinGroupMessage"></p>
+
+      <form id="joinGroupForm">
+        <label for="joinCode">Código de grupo</label>
+        <input type="text" id="joinCode" placeholder="Ingresá el código del grupo" />
+
+        <button type="submit" class="btn-secondary">Unirme</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="groupDetailModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" data-close="groupDetailModal">×</button>
+      <h2 id="detailGroupName"></h2>
+      <p id="detailGroupCode"></p>
+
+      <div class="detail-grid">
+        <div class="detail-box">
+          <h3>Miembros</h3>
+          <ul id="detailMembers"></ul>
+        </div>
+
+        <div class="detail-box">
+          <h3>Mi saldo en este grupo</h3>
+          <p id="myBalanceText"></p>
+          <p class="small-text">El saldo se actualiza automáticamente cada vez que se carga un gasto.</p>
+        </div>
+      </div>
+
+      <div class="detail-box">
+        <h3>Agregar gasto</h3>
+        <p id="expenseMessage"></p>
+
+        <form id="expenseForm">
+          <label for="expenseDescription">Descripción del gasto</label>
+          <input type="text" id="expenseDescription" placeholder="Ej: Supermercado, alquiler, limpieza" />
+
+          <label for="expenseAmount">Monto</label>
+          <input type="number" id="expenseAmount" min="1" step="0.01" placeholder="Ej: 15000" />
+
+          <label for="expensePaidBy">Quién realizó el pago</label>
+          <select id="expensePaidBy"></select>
+
+          <button type="submit" class="btn-primary">Agregar gasto</button>
+        </form>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-box">
+          <h3>Gastos compartidos</h3>
+          <div id="expensesList"></div>
+        </div>
+
+        <div class="detail-box">
+          <h3>Balance por persona</h3>
+          <div id="balancesList"></div>
+        </div>
+      </div>
+
+      <div class="detail-box">
+        <h3>Deudas dentro del grupo</h3>
+        <div id="debtsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const registerForm = document.getElementById('registerForm');
+    const loginForm = document.getElementById('loginForm');
+    const authSection = document.getElementById('authSection');
+    const mainSection = document.getElementById('mainSection');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const welcomeTitle = document.getElementById('welcomeTitle');
+
+    const registerMessage = document.getElementById('registerMessage');
+    const loginMessage = document.getElementById('loginMessage');
+    const createGroupMessage = document.getElementById('createGroupMessage');
+    const joinGroupMessage = document.getElementById('joinGroupMessage');
+    const expenseMessage = document.getElementById('expenseMessage');
+
+    const createGroupModal = document.getElementById('createGroupModal');
+    const joinGroupModal = document.getElementById('joinGroupModal');
+    const groupDetailModal = document.getElementById('groupDetailModal');
+
+    const openCreateGroupBtn = document.getElementById('openCreateGroupBtn');
+    const openJoinGroupBtn = document.getElementById('openJoinGroupBtn');
+    const createGroupForm = document.getElementById('createGroupForm');
+    const joinGroupForm = document.getElementById('joinGroupForm');
+    const expenseForm = document.getElementById('expenseForm');
+    const addMemberBtn = document.getElementById('addMemberBtn');
+    const membersContainer = document.getElementById('membersContainer');
+    const groupsContainer = document.getElementById('groupsContainer');
+
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    let groups = JSON.parse(localStorage.getItem('groups')) || [];
+    let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    let selectedGroupId = null;
+
+    function saveData() {
+      localStorage.setItem('users', JSON.stringify(users));
+      localStorage.setItem('groups', JSON.stringify(groups));
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+
+    function isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    function formatMoney(amount) {
+      return `$${Number(amount).toLocaleString('es-AR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`;
+    }
+
+    function showMessage(element, text, type) {
+      element.textContent = text;
+      element.className = type;
+    }
+
+    function getAllGroupPeople(group) {
+      const ownerMember = {
+        id: currentUser.email,
+        name: `${currentUser.name} ${currentUser.lastname}`,
+        phone: currentUser.phone,
+        relation: 'Usuario registrado'
+      };
+
+      return [ownerMember, ...group.members];
+    }
+
+    function calculateBalances(group) {
+      const people = getAllGroupPeople(group);
+      const balances = {};
+
+      people.forEach(person => {
+        balances[person.id] = {
+          name: person.name,
+          paid: 0,
+          owes: 0,
+          balance: 0
+        };
+      });
+
+      group.expenses.forEach(expense => {
+        const splitAmount = expense.amount / people.length;
+
+        people.forEach(person => {
+          balances[person.id].owes += splitAmount;
+        });
+
+        if (balances[expense.paidBy]) {
+          balances[expense.paidBy].paid += expense.amount;
+        }
+      });
+
+      Object.keys(balances).forEach(personId => {
+        balances[personId].balance = balances[personId].paid - balances[personId].owes;
+      });
+
+      return balances;
+    }
+
+    function calculateDebts(group) {
+      const balances = calculateBalances(group);
+      const debtors = [];
+      const creditors = [];
+
+      Object.values(balances).forEach(person => {
+        const roundedBalance = Number(person.balance.toFixed(2));
+
+        if (roundedBalance < 0) {
+          debtors.push({ name: person.name, amount: Math.abs(roundedBalance) });
+        }
+
+        if (roundedBalance > 0) {
+          creditors.push({ name: person.name, amount: roundedBalance });
+        }
+      });
+
+      const debts = [];
+      let debtorIndex = 0;
+      let creditorIndex = 0;
+
+      while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
+        const debtor = debtors[debtorIndex];
+        const creditor = creditors[creditorIndex];
+        const amount = Math.min(debtor.amount, creditor.amount);
+
+        debts.push({
+          from: debtor.name,
+          to: creditor.name,
+          amount
+        });
+
+        debtor.amount = Number((debtor.amount - amount).toFixed(2));
+        creditor.amount = Number((creditor.amount - amount).toFixed(2));
+
+        if (debtor.amount === 0) debtorIndex++;
+        if (creditor.amount === 0) creditorIndex++;
+      }
+
+      return debts;
+    }
+
+    function showMainPage() {
+      authSection.classList.add('hidden');
+      mainSection.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      welcomeTitle.textContent = `Bienvenido/a, ${currentUser.name}`;
+      renderGroups();
+    }
+
+    function showAuthPage() {
+      authSection.classList.remove('hidden');
+      mainSection.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+    }
+
+    function renderGroups() {
+      groupsContainer.innerHTML = '';
+
+      const userGroups = groups.filter(group => group.users.includes(currentUser.email));
+
+      if (userGroups.length === 0) {
+        groupsContainer.innerHTML = '<div class="empty-state">Todavía no tenés grupos creados o unidos.</div>';
+        return;
+      }
+
+      userGroups.forEach(group => {
+        const totalExpenses = group.expenses.reduce((total, expense) => total + expense.amount, 0);
+
+        const card = document.createElement('div');
+        card.className = 'group-card';
+        card.innerHTML = `
+          <h3>${group.name}</h3>
+          <p><strong>Código:</strong> ${group.code}</p>
+          <p><strong>Integrantes:</strong> ${getAllGroupPeople(group).length}</p>
+          <p><strong>Total gastado:</strong> ${formatMoney(totalExpenses)}</p>
+        `;
+        card.addEventListener('click', () => openGroupDetail(group.id));
+        groupsContainer.appendChild(card);
+      });
+    }
+
+    function addMemberRow() {
+      const row = document.createElement('div');
+      row.className = 'member-row';
+      row.innerHTML = `
+        <input type="text" class="member-name" placeholder="Nombre" />
+        <input type="tel" class="member-phone" placeholder="Teléfono" />
+        <select class="member-relation">
+          <option value="">Relación</option>
+          <option value="Amigo">Amigo</option>
+          <option value="Familiar">Familiar</option>
+          <option value="Trabajo">Trabajo</option>
+        </select>
+        <button type="button" class="btn-danger remove-member">Eliminar</button>
+      `;
+
+      row.querySelector('.remove-member').addEventListener('click', () => {
+        row.remove();
+      });
+
+      membersContainer.appendChild(row);
+    }
+
+    function openGroupDetail(groupId) {
+      selectedGroupId = groupId;
+      const group = groups.find(item => item.id === groupId);
+      if (!group) return;
+
+      document.getElementById('detailGroupName').textContent = group.name;
+      document.getElementById('detailGroupCode').textContent = `Código del grupo: ${group.code}`;
+
+      renderGroupDetails(group);
+      groupDetailModal.classList.remove('hidden');
+    }
+
+    function renderGroupDetails(group) {
+      const people = getAllGroupPeople(group);
+      const detailMembers = document.getElementById('detailMembers');
+      const expensePaidBy = document.getElementById('expensePaidBy');
+      const expensesList = document.getElementById('expensesList');
+      const balancesList = document.getElementById('balancesList');
+      const debtsList = document.getElementById('debtsList');
+      const myBalanceText = document.getElementById('myBalanceText');
+
+      detailMembers.innerHTML = '';
+      expensePaidBy.innerHTML = '';
+      expensesList.innerHTML = '';
+      balancesList.innerHTML = '';
+      debtsList.innerHTML = '';
+
+      people.forEach(person => {
+        const li = document.createElement('li');
+        li.textContent = `${person.name} - ${person.phone} - ${person.relation}`;
+        detailMembers.appendChild(li);
+
+        const option = document.createElement('option');
+        option.value = person.id;
+        option.textContent = person.name;
+        expensePaidBy.appendChild(option);
+      });
+
+      if (group.expenses.length === 0) {
+        expensesList.innerHTML = '<p class="small-text">Todavía no hay gastos cargados.</p>';
+      } else {
+        group.expenses.forEach(expense => {
+          const payer = people.find(person => person.id === expense.paidBy);
+          const splitAmount = expense.amount / people.length;
+
+          const item = document.createElement('div');
+          item.className = 'expense-item';
+          item.innerHTML = `
+            <p><strong>${expense.description}</strong></p>
+            <p>Monto: ${formatMoney(expense.amount)}</p>
+            <p>Pagó: ${payer ? payer.name : 'Sin datos'}</p>
+            <p class="small-text">Dividido en partes iguales: ${formatMoney(splitAmount)} por persona</p>
+          `;
+          expensesList.appendChild(item);
+        });
+      }
+
+      const balances = calculateBalances(group);
+      const myBalance = balances[currentUser.email]?.balance || 0;
+
+      if (myBalance > 0) {
+        myBalanceText.innerHTML = `<span class="positive">Te deben ${formatMoney(myBalance)}</span>`;
+      } else if (myBalance < 0) {
+        myBalanceText.innerHTML = `<span class="negative">Debés ${formatMoney(Math.abs(myBalance))}</span>`;
+      } else {
+        myBalanceText.innerHTML = '<span class="neutral">Estás en cero</span>';
+      }
+
+      Object.values(balances).forEach(person => {
+        let balanceClass = 'neutral';
+        let balanceText = 'Está en cero';
+
+        if (person.balance > 0) {
+          balanceClass = 'positive';
+          balanceText = `Le deben ${formatMoney(person.balance)}`;
+        }
+
+        if (person.balance < 0) {
+          balanceClass = 'negative';
+          balanceText = `Debe ${formatMoney(Math.abs(person.balance))}`;
+        }
+
+        const item = document.createElement('div');
+        item.className = 'balance-item';
+        item.innerHTML = `
+          <p><strong>${person.name}</strong></p>
+          <p>Pagó: ${formatMoney(person.paid)}</p>
+          <p>Le correspondía: ${formatMoney(person.owes)}</p>
+          <p class="${balanceClass}">${balanceText}</p>
+        `;
+        balancesList.appendChild(item);
+      });
+
+      const debts = calculateDebts(group);
+
+      if (debts.length === 0) {
+        debtsList.innerHTML = '<p class="small-text">No hay deudas pendientes.</p>';
+      } else {
+        debts.forEach(debt => {
+          const item = document.createElement('div');
+          item.className = 'debt-item';
+          item.innerHTML = `
+            <p><strong>${debt.from}</strong> le debe a <strong>${debt.to}</strong></p>
+            <p class="negative">${formatMoney(debt.amount)}</p>
+          `;
+          debtsList.appendChild(item);
+        });
+      }
+    }
+
+    registerForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const lastname = document.getElementById('lastname').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (!name || !lastname || !phone || !email || !password) {
+        showMessage(registerMessage, 'Todos los campos son obligatorios.', 'error');
+        return;
+      }
+
+      if (!isValidEmail(email)) {
+        showMessage(registerMessage, 'El email ingresado no es válido.', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage(registerMessage, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+        return;
+      }
+
+      const userExists = users.some(user => user.email === email);
+      if (userExists) {
+        showMessage(registerMessage, 'Ya existe un usuario registrado con ese email.', 'error');
+        return;
+      }
+
+      currentUser = { name, lastname, phone, email, password };
+      users.push(currentUser);
+      saveData();
+
+      showMessage(registerMessage, 'Cuenta creada correctamente.', 'success');
+      registerForm.reset();
+      showMainPage();
+    });
+
+    loginForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+
+      if (!email || !password) {
+        showMessage(loginMessage, 'Tenés que ingresar email y contraseña.', 'error');
+        return;
+      }
+
+      const foundUser = users.find(user => user.email === email && user.password === password);
+
+      if (!foundUser) {
+        showMessage(loginMessage, 'El usuario no existe o la contraseña es incorrecta.', 'error');
+        return;
+      }
+
+      currentUser = foundUser;
+      saveData();
+      loginForm.reset();
+      showMainPage();
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      currentUser = null;
+      localStorage.removeItem('currentUser');
+      showAuthPage();
+    });
+
+    openCreateGroupBtn.addEventListener('click', () => {
+      createGroupMessage.textContent = '';
+      membersContainer.innerHTML = '';
+      addMemberRow();
+      createGroupModal.classList.remove('hidden');
+    });
+
+    openJoinGroupBtn.addEventListener('click', () => {
+      joinGroupMessage.textContent = '';
+      joinGroupForm.reset();
+      joinGroupModal.classList.remove('hidden');
+    });
+
+    addMemberBtn.addEventListener('click', addMemberRow);
+
+    createGroupForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const groupName = document.getElementById('groupName').value.trim();
+      const groupCode = document.getElementById('groupCode').value.trim();
+
+      if (!groupName) {
+        showMessage(createGroupMessage, 'El nombre del grupo no puede estar vacío.', 'error');
+        return;
+      }
+
+      if (!groupCode) {
+        showMessage(createGroupMessage, 'El código del grupo no puede estar vacío.', 'error');
+        return;
+      }
+
+      const codeExists = groups.some(group => group.code.toLowerCase() === groupCode.toLowerCase());
+      if (codeExists) {
+        showMessage(createGroupMessage, 'Ya existe un grupo con ese código.', 'error');
+        return;
+      }
+
+      const memberRows = document.querySelectorAll('.member-row');
+      const members = [];
+
+      memberRows.forEach(row => {
+        const name = row.querySelector('.member-name').value.trim();
+        const phone = row.querySelector('.member-phone').value.trim();
+        const relation = row.querySelector('.member-relation').value;
+
+        if (name && phone && relation) {
+          members.push({
+            id: `member-${Date.now()}-${Math.random()}`,
+            name,
+            phone,
+            relation
+          });
+        }
+      });
+
+      if (members.length === 0) {
+        showMessage(createGroupMessage, 'Agregá al menos un integrante con todos sus datos.', 'error');
+        return;
+      }
+
+      const newGroup = {
+        id: Date.now(),
+        name: groupName,
+        code: groupCode,
+        members,
+        users: [currentUser.email],
+        expenses: []
+      };
+
+      groups.push(newGroup);
+      saveData();
+
+      createGroupForm.reset();
+      createGroupModal.classList.add('hidden');
+      renderGroups();
+    });
+
+    joinGroupForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const code = document.getElementById('joinCode').value.trim();
+
+      if (!code) {
+        showMessage(joinGroupMessage, 'Tenés que ingresar un código de grupo.', 'error');
+        return;
+      }
+
+      const group = groups.find(item => item.code.toLowerCase() === code.toLowerCase());
+
+      if (!group) {
+        showMessage(joinGroupMessage, 'El código ingresado no corresponde a ningún grupo.', 'error');
+        return;
+      }
+
+      if (group.users.includes(currentUser.email)) {
+        showMessage(joinGroupMessage, 'Ya pertenecés a este grupo.', 'error');
+        return;
+      }
+
+      group.users.push(currentUser.email);
+      saveData();
+
+      joinGroupModal.classList.add('hidden');
+      renderGroups();
+    });
+
+    expenseForm.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const group = groups.find(item => item.id === selectedGroupId);
+      if (!group) return;
+
+      const description = document.getElementById('expenseDescription').value.trim();
+      const amount = Number(document.getElementById('expenseAmount').value);
+      const paidBy = document.getElementById('expensePaidBy').value;
+
+      if (!description || !amount || !paidBy) {
+        showMessage(expenseMessage, 'Completá la descripción, el monto y quién realizó el pago.', 'error');
+        return;
+      }
+
+      if (amount <= 0) {
+        showMessage(expenseMessage, 'El monto debe ser mayor a cero.', 'error');
+        return;
+      }
+
+      group.expenses.push({
+        id: Date.now(),
+        description,
+        amount,
+        paidBy,
+        createdAt: new Date().toLocaleString('es-AR')
+      });
+
+      saveData();
+      expenseForm.reset();
+      expenseMessage.textContent = '';
+      renderGroupDetails(group);
+      renderGroups();
+    });
+
+    document.querySelectorAll('.close-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const modalId = button.dataset.close;
+        document.getElementById(modalId).classList.add('hidden');
+      });
+    });
+
+    window.addEventListener('click', event => {
+      if (event.target.classList.contains('modal')) {
+        event.target.classList.add('hidden');
+      }
+    });
+
+    groups = groups.map(group => ({
+      ...group,
+      expenses: group.expenses || [],
+      members: group.members.map(member => ({
+        id: member.id || `member-${Date.now()}-${Math.random()}`,
+        ...member
+      }))
+    }));
+    saveData();
+
+    if (currentUser) {
+      showMainPage();
+    } else {
+      showAuthPage();
+    }
+  </script>
+</body>
+</html>
