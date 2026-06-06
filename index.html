@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema de Gastos Compartidos</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -541,6 +542,307 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #1e293b;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      opacity: 1;
+      transition: opacity 0.4s;
+      pointer-events: auto;
+      max-width: 320px;
+    }
+
+    .toast.fade-out { opacity: 0; }
+    .toast.toast-success { border-left: 4px solid #10b981; }
+    .toast.toast-info    { border-left: 4px solid #4f46e5; }
+    .toast.toast-warning { border-left: 4px solid #f59e0b; }
+
+    /* Notification bell */
+    .notif-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ef4444;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    /* Notification inbox */
+    .notif-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item .notif-time { font-size: 11px; color: #999; margin-top: 3px; }
+    .notif-item.unread { background: #f0f4ff; }
+
+    /* Chart */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .chart-wrap {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .chart-wrap p {
+      font-size: 13px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 10px;
+    }
+
+    /* Custom split */
+    .split-type-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .split-type-row label { margin-bottom: 0; }
+
+    .split-custom-fields {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .split-person-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .split-person-row label {
+      margin-bottom: 0;
+      flex: 1;
+      font-weight: normal;
+    }
+
+    .split-person-row input {
+      width: 110px;
+      flex-shrink: 0;
+      margin-bottom: 0;
+    }
+
+    .split-remaining {
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .split-remaining.ok { color: #059669; }
+    .split-remaining.error { color: #dc2626; }
+
+    /* Import CSV */
+    .import-note {
+      font-size: 12px;
+      color: #888;
+      margin-top: 6px;
+    }
+
+    .btn-sm-mb {
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    /* Mercado Pago flow */
+    .payment-debt-info {
+      font-size: 15px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+
+    .pay-step-label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 12px;
+    }
+
+    .payment-method-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-method {
+      flex: 1;
+      min-width: 130px;
+      padding: 14px 10px;
+      border-radius: 10px;
+      border: 2px solid #e5e7eb;
+      background: white;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      color: #333;
+    }
+
+    .btn-method:hover {
+      border-color: #4f46e5;
+      background: #f0f0ff;
+    }
+
+    .btn-mp-choose {
+      border-color: #009ee3;
+      color: #009ee3;
+    }
+
+    .btn-mp-choose:hover {
+      background: #e6f7ff;
+      border-color: #007cc2;
+    }
+
+    .mp-icon { font-size: 18px; }
+
+    .mp-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mp-logo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mp-icon-lg { font-size: 28px; }
+
+    .mp-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #009ee3;
+    }
+
+    .mp-desc {
+      font-size: 14px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .mp-open-btn {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      font-size: 15px;
+      padding: 13px;
+      border-radius: 10px;
+      background: #009ee3;
+    }
+
+    .mp-open-btn:hover { background: #007cc2; }
+
+    .mp-return-btn {
+      background: #10b981;
+      font-size: 14px;
+    }
+
+    .pay-back-btn {
+      width: 100%;
+      margin-top: 6px;
+      font-size: 13px;
+    }
+
+    .mp-comprobante-box {
+      border-top: 1px solid #e5e7eb;
+      margin-top: 14px;
+      padding-top: 14px;
+    }
+
+    .mp-return-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #059669;
+      margin-bottom: 12px;
+    }
+
+    .comprobante-preview {
+      margin: 8px 0;
+    }
+
+    .comprobante-preview img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      object-fit: contain;
+    }
+
+    .payment-item-mp {
+      border-color: #bae6fd;
+    }
+
+    .mp-badge {
+      display: inline-block;
+      background: #009ee3;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 7px;
+      border-radius: 10px;
+      margin-bottom: 4px;
+    }
+
+    .comprobante-thumb {
+      margin-top: 6px;
+    }
+
+    .comprobante-thumb img {
+      max-width: 100%;
+      max-height: 120px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      object-fit: contain;
+    }
   </style>
 </head>
 
@@ -549,6 +851,10 @@
   <header>
     <h1>Gastos Compartidos</h1>
     <div class="header-actions">
+      <div class="notif-wrap hidden" id="notifWrap">
+        <button type="button" id="notifBellBtn" class="btn-light">🔔 Notificaciones</button>
+        <span id="notifBadge" class="notif-badge hidden">0</span>
+      </div>
       <button id="editProfileBtn" class="btn-light hidden">Mi perfil</button>
       <button id="logoutBtn" class="btn-light hidden">Cerrar sesión</button>
     </div>
@@ -651,6 +957,7 @@
       <p id="detailGroupCode"></p>
 
       <div id="groupActions" class="group-actions"></div>
+      <input type="file" id="importCsvInput" accept=".csv" class="hidden" />
 
       <div class="detail-grid">
         <div class="detail-box">
@@ -691,6 +998,19 @@
 
           <label for="expensePaidBy">Quién realizó el pago</label>
           <select id="expensePaidBy"></select>
+
+          <div class="split-type-row">
+            <label for="splitType">División del gasto:</label>
+            <select id="splitType">
+              <option value="equal">Partes iguales</option>
+              <option value="custom">Personalizada (por consumo real)</option>
+            </select>
+          </div>
+
+          <div id="splitCustomFields" class="split-custom-fields hidden">
+            <p class="split-remaining" id="splitRemaining"></p>
+            <div id="splitPersonRows"></div>
+          </div>
 
           <button type="submit" class="btn-primary">Agregar gasto</button>
         </form>
@@ -744,10 +1064,20 @@
         <div id="paymentsList"></div>
       </div>
 
-      <!-- Estadísticas (SCRUM-35 + NUEVA-F) -->
+      <!-- Estadísticas (SCRUM-35 + SCRUM-75) -->
       <div class="detail-box">
         <h3>Estadísticas del grupo</h3>
         <div id="statsList"></div>
+        <div class="chart-grid" id="chartsGrid">
+          <div class="chart-wrap">
+            <p>Gastos por categoría</p>
+            <canvas id="chartCategory" width="240" height="240"></canvas>
+          </div>
+          <div class="chart-wrap">
+            <p>Pagos por persona</p>
+            <canvas id="chartPerson" width="240" height="240"></canvas>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -767,17 +1097,63 @@
     </div>
   </div>
 
-  <!-- Modal: Nota al pagar (NUEVA-E) -->
+  <!-- Modal: Pago (efectivo o Mercado Pago) -->
   <div id="paymentNoteModal" class="modal hidden">
     <div class="modal-content modal-content-sm">
       <button class="close-btn" data-close="paymentNoteModal">×</button>
-      <h2>Confirmar pago</h2>
-      <p id="paymentNoteInfo"></p>
-      <form id="paymentNoteForm">
+      <h2>Registrar pago</h2>
+      <p id="paymentNoteInfo" class="payment-debt-info"></p>
+
+      <!-- Paso 1: elegir medio de pago -->
+      <div id="paymentMethodStep">
+        <p class="pay-step-label">¿Cómo vas a realizar el pago?</p>
+        <div class="payment-method-options">
+          <button type="button" id="payOtherBtn" class="btn-method">
+            💵 Efectivo / Otro
+          </button>
+          <button type="button" id="payMPBtn" class="btn-method btn-mp-choose">
+            <span class="mp-icon">💙</span> Mercado Pago
+          </button>
+        </div>
+      </div>
+
+      <!-- Paso 2a: efectivo/otro -->
+      <form id="paymentNoteForm" class="hidden">
         <label for="paymentNote">Nota (opcional)</label>
-        <input type="text" id="paymentNote" placeholder="Ej: transferencia, efectivo, MercadoPago..." />
+        <input type="text" id="paymentNote" placeholder="Ej: efectivo, transferencia bancaria..." />
         <button type="submit" class="btn-secondary">Confirmar pago</button>
+        <button type="button" class="btn-light pay-back-btn" id="payBackBtn">← Volver</button>
       </form>
+
+      <!-- Paso 2b: Mercado Pago -->
+      <div id="paymentMPStep" class="hidden">
+        <div class="mp-box">
+          <div class="mp-logo-row">
+            <span class="mp-icon-lg">💙</span>
+            <span class="mp-title">Mercado Pago</span>
+          </div>
+          <p class="mp-desc">Hacé click para abrir Mercado Pago y completar el pago. Cuando volvás, subí el comprobante.</p>
+          <a id="openMPLink" href="https://www.mercadopago.com.ar" target="_blank" rel="noopener noreferrer" class="btn-primary mp-open-btn">
+            Abrir Mercado Pago →
+          </a>
+          <button type="button" id="mpReturnBtn" class="btn-secondary mp-return-btn">
+            ✅ Ya pagué, subir comprobante
+          </button>
+          <button type="button" class="btn-light pay-back-btn" id="mpBackBtn">← Volver</button>
+        </div>
+
+        <!-- Subir comprobante -->
+        <div id="mpComprobanteSection" class="hidden mp-comprobante-box">
+          <p class="mp-return-title">¡Listo! Subí tu comprobante para confirmar el pago.</p>
+          <label for="mpTransactionId">Número de transacción (opcional)</label>
+          <input type="text" id="mpTransactionId" placeholder="Ej: MP-123456789" />
+          <label for="mpComprobante">Imagen del comprobante (opcional)</label>
+          <input type="file" id="mpComprobante" accept="image/*" />
+          <div id="comprobantePreview" class="comprobante-preview"></div>
+          <p id="mpComprobanteError" class="error hidden">Debés ingresar al menos el número de transacción o subir una imagen del comprobante.</p>
+          <button type="button" id="confirmMPPayBtn" class="btn-secondary">Confirmar pago con Mercado Pago</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -860,6 +1236,16 @@
     </div>
   </div>
 
+  <!-- Modal: Notificaciones (SCRUM-77) -->
+  <div id="notifModal" class="modal hidden">
+    <div class="modal-content modal-content-sm">
+      <button class="close-btn" data-close="notifModal">×</button>
+      <h2>Notificaciones</h2>
+      <button type="button" id="markAllReadBtn" class="btn-light btn-sm-mb">Marcar todas como leídas</button>
+      <div id="notifList"><p class="small-text">No hay notificaciones.</p></div>
+    </div>
+  </div>
+
   <!-- Modal: Agregar miembro a grupo existente (SCRUM-60) -->
   <div id="addMemberModal" class="modal hidden">
     <div class="modal-content modal-content-sm">
@@ -882,6 +1268,8 @@
       </form>
     </div>
   </div>
+
+  <div class="toast-container" id="toastContainer"></div>
 
   <script>
     // ── Referencias DOM ───────────────────────────────────────────────────────
@@ -936,12 +1324,16 @@
     let groups = JSON.parse(localStorage.getItem('groups')) || [];
     let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
     let selectedGroupId = null;
+    let notifications = JSON.parse(localStorage.getItem('notifications')) || [];
+    let chartCatInstance = null;
+    let chartPersonInstance = null;
 
     // ── Utilidades ────────────────────────────────────────────────────────────
     function saveData() {
       localStorage.setItem('users', JSON.stringify(users));
       localStorage.setItem('groups', JSON.stringify(groups));
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      localStorage.setItem('notifications', JSON.stringify(notifications));
     }
 
     function isValidEmail(email) {
@@ -960,13 +1352,17 @@
     }
 
     function getAllGroupPeople(group) {
-      return [
-        {
-          id: currentUser.email, name: `${currentUser.name} ${currentUser.lastname}`,
-          phone: currentUser.phone, relation: 'Usuario registrado'
-        },
-        ...group.members
-      ];
+      // Incluye TODOS los usuarios registrados del grupo (no solo el actual)
+      const registeredPeople = group.users.map(email => {
+        const u = users.find(usr => usr.email === email);
+        if (!u) return null;
+        let relation = 'Usuario registrado';
+        if (email === group.createdBy) relation = 'Creador/a del grupo';
+        if (email === currentUser.email) relation += ' (tú)';
+        return { id: u.email, name: `${u.name} ${u.lastname}`, phone: u.phone, relation };
+      }).filter(Boolean);
+
+      return [...registeredPeople, ...group.members];
     }
 
     // ── Balances y deudas ─────────────────────────────────────────────────────
@@ -979,8 +1375,15 @@
       });
 
       group.expenses.forEach(expense => {
-        const split = expense.amount / people.length;
-        people.forEach(p => { balances[p.id].owes += split; });
+        if (expense.splits && Object.keys(expense.splits).length > 0) {
+          people.forEach(p => {
+            const portion = expense.splits[p.id] !== undefined ? expense.splits[p.id] : 0;
+            balances[p.id].owes += portion;
+          });
+        } else {
+          const split = expense.amount / people.length;
+          people.forEach(p => { balances[p.id].owes += split; });
+        }
         if (balances[expense.paidBy]) balances[expense.paidBy].paid += expense.amount;
       });
 
@@ -1029,9 +1432,11 @@
       mainSection.classList.remove('hidden');
       logoutBtn.classList.remove('hidden');
       editProfileBtn.classList.remove('hidden');
+      document.getElementById('notifWrap').classList.remove('hidden');
       welcomeTitle.textContent = `Bienvenido/a, ${currentUser.name}`;
       renderGroups();
       renderGlobalSummary();
+      renderNotifBadge();
     }
 
     function showAuthPage() {
@@ -1039,6 +1444,7 @@
       mainSection.classList.add('hidden');
       logoutBtn.classList.add('hidden');
       editProfileBtn.classList.add('hidden');
+      document.getElementById('notifWrap').classList.add('hidden');
     }
 
     // ── Resumen global (NUEVA-C) ──────────────────────────────────────────────
@@ -1118,6 +1524,8 @@
       document.getElementById('filterFrom').value = '';
       document.getElementById('filterTo').value = '';
       document.getElementById('filterCategory').value = '';
+      document.getElementById('splitType').value = 'equal';
+      document.getElementById('splitCustomFields').classList.add('hidden');
 
       renderGroupActions(group);
       renderGroupDetails(group);
@@ -1162,6 +1570,13 @@
         btnLeave.addEventListener('click', () => leaveGroup(group.id));
         div.appendChild(btnLeave);
       }
+
+      // Importar CSV (SCRUM-81) — disponible para todos los miembros
+      const btnImport = document.createElement('button');
+      btnImport.className = 'btn-light';
+      btnImport.textContent = 'Importar CSV';
+      btnImport.addEventListener('click', () => document.getElementById('importCsvInput').click());
+      div.appendChild(btnImport);
     }
 
     function renderGroupDetails(group, filteredExpenses) {
@@ -1192,7 +1607,8 @@
         info.textContent = `${person.name} — ${person.phone} — ${person.relation}`;
         item.appendChild(info);
 
-        const isManualMember = person.id !== currentUser.email && !person.id.startsWith('reg-');
+        // Solo los miembros manuales (no usuarios registrados) se pueden eliminar
+        const isManualMember = group.members.some(m => m.id === person.id);
         if (isCreator && isManualMember) {
           const btnDel = document.createElement('button');
           btnDel.className = 'btn-danger';
@@ -1311,7 +1727,7 @@
       renderStats(group, filteredExpenses);
     }
 
-    // ── Historial de pagos realizados (NUEVA-A) ───────────────────────────────
+    // ── Historial de pagos realizados ─────────────────────────────────────────
     function renderPayments(group) {
       const div = document.getElementById('paymentsList');
       const people = getAllGroupPeople(group);
@@ -1325,28 +1741,48 @@
       payments.forEach(p => {
         const fromPerson = people.find(x => x.id === p.from);
         const toPerson = people.find(x => x.id === p.to);
+        const isMP = p.method === 'mp';
         const item = document.createElement('div');
-        item.className = 'payment-item';
-        item.innerHTML = `
-          <p><strong>${fromPerson ? fromPerson.name : 'Alguien'}</strong> le pagó <strong>${toPerson ? toPerson.name : 'alguien'}</strong> — ${formatMoney(p.amount)}</p>
-          <p class="small-text">${p.createdAt}</p>
-          ${p.note ? `<p class="payment-note">Nota: ${p.note}</p>` : ''}
-        `;
+        item.className = `payment-item${isMP ? ' payment-item-mp' : ''}`;
+
+        let html = '';
+        if (isMP) html += `<span class="mp-badge">💙 Mercado Pago</span><br>`;
+
+        html += `<p><strong>${fromPerson ? fromPerson.name : 'Alguien'}</strong> le pagó a <strong>${toPerson ? toPerson.name : 'alguien'}</strong> — ${formatMoney(p.amount)}</p>`;
+        html += `<p class="small-text">${p.createdAt}</p>`;
+
+        if (isMP && p.transactionId) {
+          html += `<p class="payment-note">ID de transacción: ${p.transactionId}</p>`;
+        }
+        if (!isMP && p.note) {
+          html += `<p class="payment-note">Nota: ${p.note}</p>`;
+        }
+        if (p.comprobante) {
+          html += `<div class="comprobante-thumb"><img src="${p.comprobante}" alt="Comprobante" title="Ver comprobante" /></div>`;
+        }
+
+        item.innerHTML = html;
         div.appendChild(item);
       });
     }
 
-    // ── Estadísticas (SCRUM-35 + NUEVA-F) ────────────────────────────────────
+    // ── Estadísticas (SCRUM-35 + SCRUM-69 + SCRUM-75) ────────────────────────
     function renderStats(group, filteredExpenses) {
       const statsList = document.getElementById('statsList');
       const people = getAllGroupPeople(group);
       const expenses = filteredExpenses !== undefined ? filteredExpenses : group.expenses;
 
+      // Destroy previous chart instances
+      if (chartCatInstance) { chartCatInstance.destroy(); chartCatInstance = null; }
+      if (chartPersonInstance) { chartPersonInstance.destroy(); chartPersonInstance = null; }
+
       if (expenses.length === 0) {
         statsList.innerHTML = '<p class="small-text">Todavía no hay gastos cargados.</p>';
+        document.getElementById('chartsGrid').classList.add('hidden');
         return;
       }
 
+      document.getElementById('chartsGrid').classList.remove('hidden');
       const total = expenses.reduce((s, e) => s + e.amount, 0);
 
       let html = `
@@ -1355,7 +1791,6 @@
           <span class="stat-right"><strong>${formatMoney(total)}</strong></span>
         </div>`;
 
-      // Por categoría
       const byCat = {};
       expenses.forEach(e => {
         const cat = e.category || 'Sin categoría';
@@ -1376,7 +1811,6 @@
         });
       }
 
-      // Por persona (quién pagó)
       const balances = calculateBalances(group);
       const personEntries = Object.values(balances).sort((a, b) => b.paid - a.paid);
       html += `<p class="stat-section-title">Pagos por persona</p>`;
@@ -1390,7 +1824,6 @@
           </div>`;
       });
 
-      // Promedio por persona (NUEVA-F)
       const avg = people.length > 0 ? total / people.length : 0;
       html += `
         <p class="stat-section-title">Referencia</p>
@@ -1404,6 +1837,37 @@
         </div>`;
 
       statsList.innerHTML = html;
+
+      // Gráfico de torta por categoría (SCRUM-75)
+      const catCanvas = document.getElementById('chartCategory');
+      if (catCanvas && catEntries.length > 0) {
+        const palette = ['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316'];
+        chartCatInstance = new Chart(catCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: catEntries.map(([c]) => c),
+            datasets: [{ data: catEntries.map(([,v]) => v), backgroundColor: palette }]
+          },
+          options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, responsive: false }
+        });
+      }
+
+      // Gráfico de barras por persona (SCRUM-75)
+      const personCanvas = document.getElementById('chartPerson');
+      if (personCanvas && personEntries.length > 0) {
+        chartPersonInstance = new Chart(personCanvas, {
+          type: 'bar',
+          data: {
+            labels: personEntries.map(p => p.name),
+            datasets: [{ label: 'Pagó', data: personEntries.map(p => p.paid), backgroundColor: '#4f46e5' }]
+          },
+          options: {
+            responsive: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { ticks: { callback: v => `$${v.toLocaleString('es-AR')}` } } }
+          }
+        });
+      }
     }
 
     // ── Filtros + ordenamiento (SCRUM-34 + SCRUM-62 + SCRUM-59 + NUEVA-D) ────
@@ -1481,39 +1945,137 @@
       URL.revokeObjectURL(url);
     });
 
-    // ── Marcar deuda como pagada + nota (SCRUM-58 + NUEVA-E) ─────────────────
+    // ── Pago: efectivo o Mercado Pago ─────────────────────────────────────────
     let pendingPayment = null;
+
+    function resetPaymentModal() {
+      document.getElementById('paymentMethodStep').classList.remove('hidden');
+      document.getElementById('paymentNoteForm').classList.add('hidden');
+      document.getElementById('paymentMPStep').classList.add('hidden');
+      document.getElementById('mpComprobanteSection').classList.add('hidden');
+      document.getElementById('comprobantePreview').innerHTML = '';
+      document.getElementById('mpTransactionId').value = '';
+      document.getElementById('mpComprobante').value = '';
+      document.getElementById('paymentNote').value = '';
+    }
 
     function markDebtPaid(group, debt) {
       pendingPayment = { group, debt };
-      paymentNoteInfo.textContent = `${debt.from} le paga ${formatMoney(debt.amount)} a ${debt.to}`;
-      document.getElementById('paymentNote').value = '';
+      document.getElementById('paymentNoteInfo').textContent =
+        `${debt.from} → ${debt.to}  |  ${formatMoney(debt.amount)}`;
+      resetPaymentModal();
       paymentNoteModal.classList.remove('hidden');
     }
 
-    paymentNoteForm.addEventListener('submit', event => {
-      event.preventDefault();
-      if (!pendingPayment) return;
-
-      const { group, debt } = pendingPayment;
-      const note = document.getElementById('paymentNote').value.trim();
-
+    function registerPayment(group, debt, method, note, comprobante, transactionId) {
       group.payments = group.payments || [];
       group.payments.push({
         id: Date.now(),
         from: debt.fromId,
         to: debt.toId,
         amount: debt.amount,
+        method,
         note: note || null,
+        transactionId: transactionId || null,
+        comprobante: comprobante || null,
         createdAt: new Date().toLocaleString('es-AR')
       });
-
       saveData();
       pendingPayment = null;
       paymentNoteModal.classList.add('hidden');
+      addNotification(
+        `Pago con ${method === 'mp' ? 'Mercado Pago' : 'efectivo/otro'}: ${debt.from} le pagó ${formatMoney(debt.amount)} a ${debt.to}`,
+        'success'
+      );
       renderGroupDetails(group);
       renderGroups();
       renderGlobalSummary();
+    }
+
+    // Elegir efectivo/otro
+    document.getElementById('payOtherBtn').addEventListener('click', () => {
+      document.getElementById('paymentMethodStep').classList.add('hidden');
+      document.getElementById('paymentNoteForm').classList.remove('hidden');
+    });
+
+    // Volver desde efectivo
+    document.getElementById('payBackBtn').addEventListener('click', () => {
+      document.getElementById('paymentNoteForm').classList.add('hidden');
+      document.getElementById('paymentMethodStep').classList.remove('hidden');
+    });
+
+    // Confirmar pago efectivo/otro
+    document.getElementById('paymentNoteForm').addEventListener('submit', event => {
+      event.preventDefault();
+      if (!pendingPayment) return;
+      const { group, debt } = pendingPayment;
+      const note = document.getElementById('paymentNote').value.trim();
+      registerPayment(group, debt, 'other', note, null, null);
+    });
+
+    // Elegir Mercado Pago
+    document.getElementById('payMPBtn').addEventListener('click', () => {
+      document.getElementById('paymentMethodStep').classList.add('hidden');
+      document.getElementById('paymentMPStep').classList.remove('hidden');
+    });
+
+    // Volver desde MP
+    document.getElementById('mpBackBtn').addEventListener('click', () => {
+      document.getElementById('paymentMPStep').classList.add('hidden');
+      document.getElementById('paymentMethodStep').classList.remove('hidden');
+    });
+
+    // "Ya pagué" → mostrar sección comprobante
+    document.getElementById('mpReturnBtn').addEventListener('click', () => {
+      document.getElementById('mpComprobanteSection').classList.remove('hidden');
+      document.getElementById('mpReturnBtn').classList.add('hidden');
+    });
+
+    // Limpiar error cuando el usuario empieza a corregir
+    document.getElementById('mpTransactionId').addEventListener('input', () => {
+      document.getElementById('mpComprobanteError').classList.add('hidden');
+    });
+
+    // Preview de imagen del comprobante
+    document.getElementById('mpComprobante').addEventListener('change', function () {
+      document.getElementById('mpComprobanteError').classList.add('hidden');
+      const preview = document.getElementById('comprobantePreview');
+      preview.innerHTML = '';
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.alt = 'Comprobante';
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Confirmar pago con MP
+    document.getElementById('confirmMPPayBtn').addEventListener('click', () => {
+      if (!pendingPayment) return;
+      const { group, debt } = pendingPayment;
+      const transactionId = document.getElementById('mpTransactionId').value.trim();
+      const file = document.getElementById('mpComprobante').files[0];
+      const errorEl = document.getElementById('mpComprobanteError');
+
+      if (!transactionId && !file) {
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      errorEl.classList.add('hidden');
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          registerPayment(group, debt, 'mp', 'Mercado Pago', e.target.result, transactionId);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        registerPayment(group, debt, 'mp', 'Mercado Pago', null, transactionId);
+      }
     });
 
     // ── Renombrar grupo (NUEVA-B) ─────────────────────────────────────────────
@@ -1625,6 +2187,7 @@
 
       saveData();
       addMemberModal.classList.add('hidden');
+      addNotification(`Nuevo integrante agregado: ${name} al grupo "${group.name}"`, 'info');
       renderGroupActions(group);
       renderGroupDetails(group);
       renderGroups();
@@ -1890,6 +2453,7 @@
       saveData();
       createGroupForm.reset();
       createGroupModal.classList.add('hidden');
+      addNotification(`Grupo "${groupName}" creado exitosamente.`, 'success');
       renderGroups();
       renderGlobalSummary();
     });
@@ -1928,6 +2492,7 @@
       const category = document.getElementById('expenseCategory').value;
       const date = document.getElementById('expenseDate').value;
       const paidBy = document.getElementById('expensePaidBy').value;
+      const splitType = document.getElementById('splitType').value;
 
       if (!description || !amount || !paidBy) {
         showMessage(expenseMessage, 'Completá la descripción, el monto y quién realizó el pago.', 'error'); return;
@@ -1936,14 +2501,36 @@
         showMessage(expenseMessage, 'El monto debe ser mayor a cero.', 'error'); return;
       }
 
+      let splits = null;
+      if (splitType === 'custom') {
+        splits = {};
+        let total = 0;
+        const rows = document.querySelectorAll('#splitPersonRows .split-person-row');
+        rows.forEach(row => {
+          const pid = row.dataset.personId;
+          const val = Number(row.querySelector('input').value) || 0;
+          splits[pid] = val;
+          total += val;
+        });
+        const diff = Math.abs(total - amount);
+        if (diff > 0.01) {
+          showMessage(expenseMessage, `La suma de las partes (${formatMoney(total)}) debe ser igual al monto total (${formatMoney(amount)}).`, 'error');
+          return;
+        }
+      }
+
       group.expenses.push({
         id: Date.now(), description, amount, category, date, paidBy,
+        splits: splits,
         createdAt: new Date().toLocaleString('es-AR')
       });
 
       saveData();
       expenseForm.reset();
+      document.getElementById('splitType').value = 'equal';
+      document.getElementById('splitCustomFields').classList.add('hidden');
       expenseMessage.textContent = '';
+      addNotification(`Nuevo gasto agregado: "${description}" — ${formatMoney(amount)} en ${group.name}`, 'success');
       renderGroupDetails(group);
       renderGroups();
       renderGlobalSummary();
@@ -1960,6 +2547,165 @@
       if (event.target.classList.contains('modal')) {
         event.target.classList.add('hidden');
       }
+    });
+
+    // ── Notificaciones in-app (SCRUM-77) ─────────────────────────────────────
+    function addNotification(message, type = 'info') {
+      notifications.unshift({
+        id: Date.now(),
+        message,
+        type,
+        time: new Date().toLocaleString('es-AR'),
+        read: false
+      });
+      if (notifications.length > 50) notifications.pop();
+      saveData();
+      showToast(message, type);
+      renderNotifBadge();
+    }
+
+    function renderNotifBadge() {
+      const unread = notifications.filter(n => !n.read).length;
+      const badge = document.getElementById('notifBadge');
+      if (unread > 0) {
+        badge.textContent = unread > 9 ? '9+' : unread;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('fade-out'), 3200);
+      setTimeout(() => toast.remove(), 3600);
+    }
+
+    document.getElementById('notifBellBtn').addEventListener('click', () => {
+      const list = document.getElementById('notifList');
+      if (notifications.length === 0) {
+        list.innerHTML = '<p class="small-text">No hay notificaciones.</p>';
+      } else {
+        list.innerHTML = notifications.map(n => `
+          <div class="notif-item${n.read ? '' : ' unread'}">
+            <p>${n.message}</p>
+            <p class="notif-time">${n.time}</p>
+          </div>`).join('');
+      }
+      document.getElementById('notifModal').classList.remove('hidden');
+    });
+
+    document.getElementById('markAllReadBtn').addEventListener('click', () => {
+      notifications.forEach(n => { n.read = true; });
+      saveData();
+      renderNotifBadge();
+      document.getElementById('notifList').querySelectorAll('.notif-item').forEach(el => el.classList.remove('unread'));
+    });
+
+    // ── División personalizada (SCRUM-79) ─────────────────────────────────────
+    document.getElementById('splitType').addEventListener('change', function () {
+      const group = groups.find(g => g.id === selectedGroupId);
+      const customDiv = document.getElementById('splitCustomFields');
+      if (this.value === 'custom' && group) {
+        const people = getAllGroupPeople(group);
+        const amount = Number(document.getElementById('expenseAmount').value) || 0;
+        const share = people.length > 0 ? (amount / people.length) : 0;
+        const rowsDiv = document.getElementById('splitPersonRows');
+        rowsDiv.innerHTML = '';
+        people.forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'split-person-row';
+          row.dataset.personId = p.id;
+          row.innerHTML = `
+            <label>${p.name}</label>
+            <input type="number" min="0" step="0.01" value="${share.toFixed(2)}" placeholder="0.00" />
+          `;
+          row.querySelector('input').addEventListener('input', updateSplitRemaining);
+          rowsDiv.appendChild(row);
+        });
+        updateSplitRemaining();
+        customDiv.classList.remove('hidden');
+      } else {
+        customDiv.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('expenseAmount').addEventListener('input', () => {
+      if (document.getElementById('splitType').value === 'custom') {
+        document.getElementById('splitType').dispatchEvent(new Event('change'));
+      }
+    });
+
+    function updateSplitRemaining() {
+      const amount = Number(document.getElementById('expenseAmount').value) || 0;
+      const rows = document.querySelectorAll('#splitPersonRows .split-person-row');
+      let total = 0;
+      rows.forEach(r => { total += Number(r.querySelector('input').value) || 0; });
+      const diff = amount - total;
+      const el = document.getElementById('splitRemaining');
+      el.textContent = Math.abs(diff) < 0.01
+        ? `La suma coincide con el monto total. ✓`
+        : `Falta distribuir: ${formatMoney(diff)} (total asignado: ${formatMoney(total)})`;
+      el.className = `split-remaining ${Math.abs(diff) < 0.01 ? 'ok' : 'error'}`;
+    }
+
+    // ── Importar CSV (SCRUM-81) ───────────────────────────────────────────────
+    document.getElementById('importCsvInput').addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
+      const group = groups.find(g => g.id === selectedGroupId);
+      if (!group) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const lines = e.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) { alert('El archivo CSV está vacío o no tiene datos.'); return; }
+
+        const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim().toLowerCase());
+        const descIdx = headers.findIndex(h => h.includes('desc'));
+        const amtIdx  = headers.findIndex(h => h.includes('monto') || h.includes('amount'));
+        const catIdx  = headers.findIndex(h => h.includes('categ'));
+        const dateIdx = headers.findIndex(h => h.includes('fecha') || h.includes('date'));
+
+        if (descIdx === -1 || amtIdx === -1) {
+          alert('El CSV debe tener columnas "Descripcion" y "Monto". Descargá la plantilla con el botón Exportar CSV como referencia.');
+          return;
+        }
+
+        let imported = 0;
+        lines.slice(1).forEach(line => {
+          const cols = line.split(',').map(c => c.replace(/"/g,'').trim());
+          const description = cols[descIdx];
+          const amount = Number(cols[amtIdx]);
+          if (!description || isNaN(amount) || amount <= 0) return;
+
+          group.expenses.push({
+            id: Date.now() + Math.random(),
+            description,
+            amount,
+            category: catIdx !== -1 ? cols[catIdx] : '',
+            date: dateIdx !== -1 ? cols[dateIdx] : '',
+            paidBy: currentUser.email,
+            splits: null,
+            createdAt: new Date().toLocaleString('es-AR')
+          });
+          imported++;
+        });
+
+        saveData();
+        this.value = '';
+        addNotification(`${imported} movimiento(s) importado(s) en "${group.name}"`, 'success');
+        renderGroupDetails(group);
+        renderGroups();
+        renderGlobalSummary();
+      }.bind(this);
+
+      reader.readAsText(file, 'UTF-8');
+      this.value = '';
     });
 
     // ── Migración de datos existentes ─────────────────────────────────────────
